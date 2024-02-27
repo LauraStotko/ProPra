@@ -14,7 +14,6 @@ a. Introducing BLAST
 - Function: The program compares nucleotide / protein sequences to sequence databases and calculates the statistical significance.
 
 b. Number of Searched Sequences
-- Selected sequences: 100 
 - Number of sequences: 103549012
 
 c. Meaning of E-values
