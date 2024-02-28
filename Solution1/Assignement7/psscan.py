@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
 import argparse
-import re
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Find the PROSITE pattern in FASTA sequences.")
@@ -29,7 +28,7 @@ def prosite_to_regex(prosite_Pattern):
 
 
 def main():
-    args = parse_arguments()
+    # args = parse_arguments()
 
     # Test PROSITE pattern converted to regular expression
     print(prosite_to_regex('C-x(2,4)-C-x(3)-[LIVMFYWC]-x(8)-H-x(3,5)-H'))
