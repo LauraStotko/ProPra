@@ -3,13 +3,12 @@
 import argparse
 
 
-def read_fasta_sequence(fasta_file_path):
-    # löschen der Zeilenumbrüche
+def read_fasta_sequence(file_obj):
+    """Liest eine FASTA-Datei aus einer Datei und gibt die Sequenz ohne Zeilenumbrüche zurück."""
     sequence = ''
-    with open(fasta_file_path, 'r') as file:
-        for line in file:
-            if not line.startswith('>'):
-                sequence += line.strip()
+    for line in file_obj:
+        if not line.startswith('>'):
+            sequence += line.strip()
     return sequence
 
 
@@ -32,12 +31,11 @@ def count_sequence_occurrences(genome, sequences):
 def main():
     parser = argparse.ArgumentParser(description='Count the occurrences of sequences in a given genome.')
     parser.add_argument('--sequence', nargs='+', required=True, help='Sequences to search for in the genome')
-    parser.add_argument('--genome', type=argparse.FileType('r'), required=True, help='File path to the genome sequence')
-    # parser.add_argument('--genome', type=str, required=True, help='File path to the genome sequence')
+    parser.add_argument('--genome', type=argparse.FileType('r'), required=True, help='FASTA file containing the genome sequence')
     args = parser.parse_args()
-    # type = argparse.FileType('r')
 
     genome_sequence = read_fasta_sequence(args.genome)
+
     sequence_counts = count_sequence_occurrences(genome_sequence, args.sequence)
     for sequence, count in sequence_counts.items():
         print(f"{sequence}: {count}")
@@ -45,3 +43,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    

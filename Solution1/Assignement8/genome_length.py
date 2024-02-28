@@ -13,15 +13,18 @@ def search_genome(report, organisms):
         if l.startswith('#'):
             continue
         columns = l.split('\t')
-        #status = 15th column
-        if len(columns) > 15:
-            if columns[15].startswith('Complete Genome'):
-                organism = columns[0]
-                for org in organisms:
-                    if re.search(org, organism, re.IGNORECASE):
-                        length = float(columns[6])
-                        genomes.append((organism, length))
-                        break
+        #status is 15th column
+        if len(columns) <= 15:
+            continue
+        if not columns[15].startswith('Complete Genome'):
+            continue
+        organism = columns[0]
+        organism = organism.split("'")[0]
+        for org in organisms:
+            if re.search(org, organism):
+                length = float(columns[6])
+                genomes.append((organism, length))
+                break
     return genomes
 
 if __name__ == '__main__':
@@ -35,4 +38,4 @@ if __name__ == '__main__':
     if report:
         search_results = search_genome(report, args.organism)
         for organism, length in search_results:
-            print(f"{organism}\t{length} Mb")
+            print(f"{organism}\t{length}")
