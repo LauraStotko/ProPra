@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import argparse
+import re
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Find the PROSITE pattern in FASTA sequences.")
@@ -9,8 +10,8 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def prosite_to_regex(prosite_Pattern):
-    regex_pattern = prosite_Pattern
+def prosite_to_regex(prosite_pattern):
+    regex_pattern = prosite_pattern
     regex_pattern = regex_pattern.replace('-', '')      # Separation between different elements
     regex_pattern = regex_pattern.replace(' - ', '')
     regex_pattern = regex_pattern.replace('x', '.')     # Any character except newline
@@ -28,10 +29,20 @@ def prosite_to_regex(prosite_Pattern):
 
 
 def main():
-    # args = parse_arguments()
+    args = parse_arguments()
 
-    # Test PROSITE pattern converted to regular expression
-    print(prosite_to_regex('C-x(2,4)-C-x(3)-[LIVMFYWC]-x(8)-H-x(3,5)-H'))
+    prosite_pattern = args.pattern
+
+    print(f'Pattern: {prosite_pattern}')
+    print(f'Pattern as RegEx: {prosite_to_regex(prosite_pattern)}')
+    print(f'FASTA File: {args.fasta.name}')
+
+    '''
+python psscan3.py --fasta misteriosa_virus.fasta --pattern "[LIVMF]-H-C-x(2)-G-x(3)-{STC}-[STAGP]-x-[LIVMFY]"
+Pattern: [LIVMF]-H-C-x(2)-G-x(3)-{STC}-[STAGP]-x-[LIVMFY]
+Pattern as RegEx: [LIVMF]HC.{2}G.{3}[^STC][STAGP].[LIVMFY]
+FASTA File: misteriosa_virus.fasta
+    '''
 
 
 if __name__ == "__main__":
