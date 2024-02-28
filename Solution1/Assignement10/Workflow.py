@@ -6,15 +6,19 @@ def read_fasta(fasta_file):
     sequences = {}
     current_id = None
     current = ''
+    # go trough every line of the file and save the sequence_id with the corresponding sequence in a dictionary
     for l in fasta_file:
+        # returns the same string without spaces
         l = l.strip()
+        # first line of new sequence, contains the sequence_id
         if l.startswith('>'):
             if current_id:
                 sequences[current_id] = current
                 current = ''
-            #neue id speichern
+            #save new id
             current_id = l.strip()[1:]
         else:
+            #add line of sequence to the current sequence
             current += l
     if current_id:
         sequences[current_id] = current
@@ -26,12 +30,15 @@ Genome 2 ORF
 def get_features(features_table):
     features_cds = {}
 
+    #save only the line in feature_table that contain CDS and do not start with hashtag
     for l in features_table:
+        # head line
         if l.startswith('#'):
             continue
         columns = l.strip().split('\t')
         if not columns[0] == 'CDS':
             continue
+        #save columns from feature table that are important for next step
         locus_tag = columns[16]
         start = int(columns[7])
         end = int(columns[8])
@@ -44,10 +51,12 @@ def get_features(features_table):
     return features_cds
 
 def genome2orf(genome_file, feature_file):
+    # receive content of files as dictionaries
     sequences = read_fasta(genome_file)
     features_cds = get_features(feature_file)
     orf_sequences = {}
 
+    # receive orfs for every sequence_id in the features_cds
     for sequence_id, features in features_cds.items():
         key = None
         for seq in sequences.keys():
@@ -58,14 +67,17 @@ def genome2orf(genome_file, feature_file):
             for feature in features:
                 locus_tag, start, end, strand = feature
                 if strand == '-':
-                   current = reverse_complement(seq[start-1:end])
-                   current = current[::-1]
+                    # negative strand
+                    current = complement(seq[start-1:end])
+                    # flip the string zo receive the reverse complement
+                    current = current[::-1]
                 else:
-                   current = seq[start-1:end]
+
+                    current = seq[start-1:end]
                 orf_sequences[locus_tag] = current
     return orf_sequences
 
-def reverse_complement(sequence):
+def complement(sequence):
     result_sequence = ''
     for base in sequence:
         if base == 'A':
@@ -84,14 +96,17 @@ DNA 2 MRNA
 def dna2mrna(orf_sequences):
     sequences = orf_sequences
     mrna_sequences = {}
+
     for sequence_id, sequence in sequences.items():
         mrna = replace(sequence)
+        #save in new dictionary
         mrna_sequences[sequence_id] = mrna
     return mrna_sequences
 
 
 def replace(dna_sequence):
     mrna_sequence = ""
+    # replace T with U for mrna
     for base in dna_sequence:
         if base == 'T':
             mrna_sequence += 'U'
@@ -104,6 +119,7 @@ def replace(dna_sequence):
 MRNA 2 AA
 '''
 def translate_codon(codon):
+    # Codon table contains all 64 codons and their one letter code for the right amino acid
     codon_table = {
         'UUU': 'F', 'UUC': 'F', 'UUA': 'L', 'UUG': 'L',
         'UCU': 'S', 'UCC': 'S', 'UCA': 'S', 'UCG': 'S',
