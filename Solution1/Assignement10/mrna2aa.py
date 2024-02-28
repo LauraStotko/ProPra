@@ -1,27 +1,31 @@
 #!/usr/bin/python3
 import argparse
-import sys
 
 def read_fasta(fasta_file):
+
     sequences = {}
-    with open(fasta_file) as f:
-        current_id = None
-        current = ''
-        for l in f:
-            l = l.strip()
-            if l.startswith('>'):
-                if current_id:
-                    sequences[current_id] = current
-                    current=''
-                #neu anfangen
-                current_id = l.strip()[1:]
-            else:
-                current += l
-        if current_id:
-            sequences[current_id] = current
+    current_id = None
+    current = ''
+    # go trough every line of the file and save the sequence_id with the corresponding sequence in a dictionary
+    for l in fasta_file:
+        # returns the same string without spaces
+        l = l.strip()
+        # first line of new sequence, contains the sequence_id
+        if l.startswith('>'):
+            if current_id:
+                sequences[current_id] = current
+                current=''
+            #save new id
+            current_id = l.strip()[1:]
+        else:
+            # add line of sequence to the current sequence
+            current += l
+    if current_id:
+        sequences[current_id] = current
     return sequences
 
 def translate_codon(codon):
+    # Codon table contains all 64 codons and their one letter code for the right amino acid
     codon_table = {
         'UUU': 'F', 'UUC': 'F', 'UUA': 'L', 'UUG': 'L',
         'UCU': 'S', 'UCC': 'S', 'UCA': 'S', 'UCG': 'S',
@@ -40,11 +44,13 @@ def translate_codon(codon):
         'GAU': 'D', 'GAC': 'D', 'GAA': 'E', 'GAG': 'E',
         'GGU': 'G', 'GGC': 'G', 'GGA': 'G', 'GGG': 'G'
     }
+    # X als default value, falls
     return codon_table.get(codon, 'X')
 
 
 def translate_mrna(mrna_sequences):
-    protein_sequences = []
+    protein_sequences = {}
+
     for sequence_id, sequence in mrna_sequences.items():
         if len(sequence) % 3 != 0:
             break  # Sequenzlänge ist nicht durch 3 teilbar
@@ -67,19 +73,15 @@ def translate_mrna(mrna_sequences):
     return protein_sequences
 
 if __name__ == '__main__':
+
     pars = argparse.ArgumentParser(description="Translate mRNA to Proteins")
-    pars.add_argument("--fasta", type=str,required=True)
+    pars.add_argument("--fasta", type = argparse.FileType('r'), required=True)
     args = pars.parse_args()
 
-    if args.fasta =='-':
-        fasta_file = sys.stdin
-        sequences = read_fasta(fasta_file)
-    else:
-        sequences = read_fasta(args.fasta)
-
+    sequences = read_fasta(args.fasta)
     protein_sequences = translate_mrna(sequences)
 
-    for sequence_id, protein_sequence in protein_sequences:
+    for sequence_id, protein_sequence in protein_sequences.items():
         print(f'>{sequence_id}')
         print(protein_sequence)
 
