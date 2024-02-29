@@ -4,6 +4,7 @@ import argparse
 import re
 
 
+
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Find the PROSITE pattern in FASTA sequences.")
     parser.add_argument("--fasta", type=argparse.FileType("r"), help="Input FASTA file or '-' for stdin", required=True)
@@ -32,19 +33,25 @@ def prosite_to_regex(prosite_pattern):
 def parse_fasta(fasta_file):
     key = ''
     sequence = ''
-
     dict_sequences = {}
 
     for line in fasta_file:
+
         if line.startswith('>'):
-            key = line.strip('\n')
-            key = key.strip('>')
-            key = key.strip('\t')
+            if key not in dict_sequences:
+                if key != "":
+                    dict_sequences[key] = sequence
+
+                sequence = ''
+                key = line.strip('\n')
+                key = key.strip('>')
+                key = key.strip('\t')
+
         else:
             sequence += line.strip()
 
-
     dict_sequences[key] = sequence
+    #print(f'Key: {key}  Sequence: {sequence}')
 
     # print(key)
 
@@ -92,6 +99,7 @@ def main():
 
     for match in matches:
         print(f'{match["key"]}\t{match["start"]}\t{match["sequence"]}')
+
 
 
 if __name__ == "__main__":
