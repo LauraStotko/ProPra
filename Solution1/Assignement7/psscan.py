@@ -94,10 +94,7 @@ def get_prosite_pattern_from_web(prosit_id):
     ac_match = re.search(r"AC   " + prosit_id + r";", prosite_dat)
 
     if ac_match:
-        ac_start = ac_match.start()
-        ac_end = prosite_dat.find(";", ac_start)
-        ac = prosite_dat[ac_start + 5:ac_end].strip()
-        return extract_pattern_from_prosite_dat(prosite_dat, ac)
+        return extract_pattern_from_prosite_dat(prosite_dat, prosit_id)
 
 
 def download_prosite_dat():
@@ -109,19 +106,19 @@ def download_prosite_dat():
         return prosite_dat.text
 
 
-def extract_pattern_from_prosite_dat(prosite_dat, ac):
-    pattern_start = prosite_dat.find(f"AC   {ac}")
-    if pattern_start != -1:
+def extract_pattern_from_prosite_dat(prosite_dat, prosit_id):
+    entry_start = prosite_dat.find(f"AC   {prosit_id}")
+    if entry_start != -1:
         # Find the end position of the AC entry (denoted by '//')
-        pattern_end = prosite_dat.find("//", pattern_start)
+        entry_end = prosite_dat.find("//", entry_start)
         # Extract the text corresponding to the AC entry
-        pattern_text = prosite_dat[pattern_start:pattern_end].strip()
+        entry_text = prosite_dat[entry_start:entry_end].strip()
         '''
           r"PA   (.+?)\n": Matches lines starting with 'PA' and captures the content inside parentheses,
                            which represents the Prosite pattern. The non-greedy qualifier '?'
                            ensures that the match is as short as possible.
         '''
-        pattern_match = re.search(r"PA   (.+?)\n", pattern_text)
+        pattern_match = re.search(r"PA   (.+?)\n", entry_text)
         if pattern_match:
             # Extract first capturing group of the matched Prosite pattern
             pattern = pattern_match.group(1).strip()
