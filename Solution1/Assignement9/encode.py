@@ -89,15 +89,15 @@ def write_combined_table(combined_accessions, filepath):
 
 def main():
     parser = argparse.ArgumentParser(description="Analyses CSV file and outputs specific TSV files")
-    parser.add_argument("--input", required=True, help="Path to the CSV file to be examined")
+    parser.add_argument("--input", type=argparse.FileType("r"), required=True, help="Path to the CSV file to be examined")
     parser.add_argument("--output", required=True, help="Destination file path for the analysis result in TSV format")
     parser.add_argument("--experimental-factor", default="Antibody=H3K27me3", help="Experimental factor to filter on")
     args = parser.parse_args()
 
-    with open(args.input, 'r') as input_file:
-        col_names, rows = read_csv(input_file)
-        data_type_counts, antibodies_chip_counts, combined_accessions = process_data(col_names, rows,
-                                                                                     args.experimental_factor)
+    #with open(args.input, 'r') as input_file:
+    col_names, rows = read_csv(args.input)
+    data_type_counts, antibodies_chip_counts, combined_accessions = process_data(col_names, rows,
+                                                                                 args.experimental_factor)
 
     # Write results to files
     write_to_tsv_file(data_type_counts, f"{args.output}/exptypes.tsv")
