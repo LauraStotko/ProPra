@@ -1,34 +1,52 @@
 #!/usr/bin/env python3
 
 import argparse
+import requests
 import matplotlib.pyplot as plt
 import numpy as np
+import csv
 
+def download_pdb(pdb_id):
+    """
+    Lädt die PDB-Datei basierend auf der gegebenen PDB-ID herunter.
+    """
+    url = f"https://files.rcsb.org/download/{pdb_id}.pdb" # URL für den Download der PDB-Datei
+    response = requests.get(url)
+    if response.status_code == 200:
+        return response.text
+    else:
+        raise Exception(f"Failed to download PDB file for ID {pdb_id}")
 
-# Funktion zum Einlesen und Parsen der PDB-Datei
-def parse_pdb(file_path, atom_type):
-    atoms = [] # Initialisierung einer leeren Liste für die Atominformationen
-    with open(file_path, 'r') as file:
-        for line in file:
-            if line.startswith('ATOM'): # Wenn die Zeile mit 'ATOM' beginnt, handelt es sich um eine Atominformation
-                chain = line[21] # Extrahierung der Ketteninformation
-                pos = int(line[22:26].strip()) # Extrahierung der Positionsinformation
-                serial = int(line[6:11].strip()) # Extrahierung der Seriennummer
-                aa = line[17:20].strip() # Extrahierung der Aminosäureinformation
-                atom = line[12:16].strip() # Extrahierung des Atomtyps
+def parse_pdb(pdb_content, atom_type):
+    atoms = []  # Initialisierung einer leeren Liste für die Atominformationen
+    model_started = False  # Flag, um zu überprüfen, ob das erste Modell bereits begonnen hat
+    for line in pdb_content.splitlines():
+        if line.startswith('MODEL'):
+            if model_started:  # Wenn das erste Modell bereits begonnen hat, brechen wir die Schleife ab
+                break
+            else:
+                model_started = True  # Markieren, dass das erste Modell begonnen hat
+        elif line.startswith('ENDMDL'):
+            break  # Beendet die Schleife nach dem ersten Modell
+        elif line.startswith('ATOM'):  # Wenn die Zeile mit 'ATOM' beginnt, handelt es sich um eine Atominformation
+            chain = line[21]  # Extrahierung der Ketteninformation
+            pos = int(line[22:26].strip())  # Extrahierung der Positionsinformation
+            serial = int(line[6:11].strip())  # Extrahierung der Seriennummer
+            aa = line[17:20].strip()  # Extrahierung der Aminosäureinformation
+            atom = line[12:16].strip()  # Extrahierung des Atomtyps
 
-                if atom == atom_type: # Wenn der Atomtyp dem gesuchten Atomtyp entspricht, wird die Atominformation gespeichert
-                    atom_info = {
-                        'chain': chain,
-                        'pos': pos,
-                        'serial': serial,
-                        'aa': aa,
-                        'atom': atom,
-                        'x': float(line[30:38].strip()),
-                        'y': float(line[38:46].strip()),
-                        'z': float(line[46:54].strip())
-                    }
-                    atoms.append(atom_info)
+            if atom == atom_type:  # Wenn der Atomtyp dem gesuchten Atomtyp entspricht, wird die Atominformation gespeichert
+                atom_info = {
+                    'chain': chain,
+                    'pos': pos,
+                    'serial': serial,
+                    'aa': aa,
+                    'atom': atom,
+                    'x': float(line[30:38].strip()),
+                    'y': float(line[38:46].strip()),
+                    'z': float(line[46:54].strip())
+                }
+                atoms.append(atom_info)
     return atoms
 
 
@@ -39,7 +57,6 @@ def calculate_distance(atom1, atom2):
     # Berechnung der euklidischen Distanz
     distance = ((x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2) ** 0.5
     return distance
-
 
 # Funktion zur Identifizierung von Kontakten und Erstellung der Kontaktmatrix
 def identify_contacts_and_create_matrix(atoms, distance_threshold, sequence_distance):
@@ -65,23 +82,22 @@ def identify_contacts_and_create_matrix(atoms, distance_threshold, sequence_dist
 
     return contact_matrix, contact_info
 
-# Funktion zum Speichern der Kontaktmatrix als CSV-Datei
-"""
-def save_contact_matrix_csv(contact_matrix, csv_path):
-    with open(csv_path, 'w', newline='') as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerows(contact_matrix)
-"""
-
-
 # Funktion zum Speichern der .sscc Datei
-def save_sscc_file(contact_info, file_path): # Speichert die Kontaktinformationen in einer .sscc Datei
+def save_sscc_file(contact_info, file_path):
     with open(file_path, 'w') as file:
-        # Schreiben der Headerzeile
         file.write("chain\tpos\tserial\taa\tss\tglobal\tlocal\n")
-        for info in contact_info: # Schreiben der Kontaktinformationen für jedes Atom
-            line = f"{info['chain']}\t{info['pos']}\t{info['serial']}\t{info['aa']}\t'Unbekannt'\t{info['global']}\t{info['local']}\n"
-            file.write(line) # Schreiben der Zeile in die Datei
+        for info in contact_info:
+            # Verwenden von get() mit einem Standardwert, um KeyError zu vermeiden
+            chain = info.get('chain', 'Unbekannt')
+            pos = info.get('pos', 'Unbekannt')
+            serial = info.get('serial', 'Unbekannt')
+            aa = info.get('aa', 'Unbekannt')
+            ss = 'Unbekannt'  # Da 'ss' (Sekundärstruktur) nicht aus 'info' extrahiert wird
+            global_contacts = info.get('global', 0)
+            local_contacts = info.get('local', 0)
+
+            line = f"{chain}\t{pos}\t{serial}\t{aa}\t{ss}\t{global_contacts}\t{local_contacts}\n"
+            file.write(line)
 
 
 # Funktion zur Visualisierung der Kontaktmatrix
@@ -96,26 +112,38 @@ def visualize_contact_matrix(contact_matrix, image_path):
     plt.show()
     # plt.close()
 
+def save_contact_matrix_csv(contact_matrix, csv_path):
+    """
+    Speichert die Kontaktmatrix in einer CSV-Datei.
+    """
+    with open(csv_path, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        for row in contact_matrix:
+            writer.writerow(row)
 
 def main():
     parser = argparse.ArgumentParser(description="Erzeugt eine Contact Number Datei (*.sscc) für eine gegebene PDB ID.")
-    parser.add_argument('--id', type=str, required=True, help="Pfad zur PDB-Datei")
+    parser.add_argument('--id', type=str, required=True, help="PDB ID")
     parser.add_argument('--distance', type=float, required=True, help="Kontaktdistanz")
     parser.add_argument('--type', type=str, required=True, help="Atomtyp")
     parser.add_argument('--length', type=int, required=True, help="Sequenzdistanz für lokale Kontakte")
     parser.add_argument('--contactmatrix', type=str, help="Pfad zur Speicherung der Kontaktmatrix-Visualisierung")
+    parser.add_argument('--ssccfile', type=str, required=False, help="Pfad zur Speicherung der .sscc Datei")
 
     args = parser.parse_args()
 
-    atoms = parse_pdb(args.id, args.type)
+    # Extrahieren und Verarbeiten der PDB-Daten
+    pdb_content = download_pdb(args.id)
+    atoms = parse_pdb(pdb_content, args.type)
     contact_matrix, contact_info = identify_contacts_and_create_matrix(atoms, args.distance, args.length)
 
-    if args.contactmatrix: # Wenn ein Pfad zur Speicherung der Kontaktmatrix-Visualisierung angegeben wurde, wird die Visualisierung erstellt
+    # Visualisierung der Kontaktmatrix, wenn ein Pfad angegeben wurde
+    if args.contactmatrix:
         visualize_contact_matrix(contact_matrix, args.contactmatrix)
 
-    # Beispiel für Speicherort der .sscc Datei, kann angepasst werden
-    # save_sscc_file(contact_info, "protein_contacts.sscc")
-
+    # Speichern der .sscc Datei, wenn ein Pfad angegeben wurde
+    if args.ssccfile:
+        save_sscc_file(contact_info, args.ssccfile)
 
 if __name__ == "__main__":
     main()
