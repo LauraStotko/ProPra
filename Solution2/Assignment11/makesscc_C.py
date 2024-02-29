@@ -19,10 +19,10 @@ def download_pdb(pdb_id):
 
 def parse_pdb(atom_type):
     """Read and parse PDB data from stdin, ensuring no relevant information is missed."""
-    atoms = [] # Initialisierung einer leeren Liste für die Atominformationen
-    model_started = False # Flag, um zu überprüfen, ob das erste Modell bereits begonnen hat
-    for line in sys.stdin: # Iteriere über jede Zeile in der Eingabe
-        if line.strip() == '' or line.startswith('REMARK'): # Ignoriere leere Zeilen und Kommentare
+    atoms = []
+    model_started = False
+    for line in sys.stdin:
+        if line.strip() == '' or line.startswith('REMARK'):
             continue  # Ignoriere leere Zeilen und Kommentare
         if line.startswith('MODEL'):
             if model_started:
@@ -34,10 +34,10 @@ def parse_pdb(atom_type):
         if line.startswith('ATOM') and line[12:16].strip() == atom_type:
             # Extrahiere relevante Informationen korrekt
             chain = line[21]
-            pos = int(line[22:26].strip()) # Extrahiere die Positionsinformation
-            serial = int(line[6:11].strip()) # Extrahiere die Seriennummer
-            aa = line[17:20].strip() # Extrahiere die Aminosäureinformation
-            x = float(line[30:38].strip()) # Extrahiere die x-Koordinate
+            pos = int(line[22:26].strip())
+            serial = int(line[6:11].strip())
+            aa = line[17:20].strip()
+            x = float(line[30:38].strip())
             y = float(line[38:46].strip())
             z = float(line[46:54].strip())
             atoms.append((chain, pos, serial, aa, x, y, z))
@@ -47,7 +47,6 @@ def parse_pdb(atom_type):
 def calculate_distance(atom1, atom2):
     """Calculate the Euclidean distance between two atoms."""
     return math.sqrt((atom1[4] - atom2[4])**2 + (atom1[5] - atom2[5])**2 + (atom1[6] - atom2[6])**2)
-
 
 def calculate_contacts(atoms, distance_threshold, length_threshold):
     """Calculate global and local contacts between atoms."""
@@ -65,7 +64,6 @@ def calculate_contacts(atoms, distance_threshold, length_threshold):
                         global_contacts += 1
         contacts.append((atom1[0], atom1[1], atom1[2], atom1[3], 'NA', global_contacts, local_contacts))
     return contacts
-
 
 def print_sscc_table(contacts):
     """Print the .sscc table."""
@@ -87,7 +85,6 @@ def main():
     atoms = parse_pdb(args.type)
     contacts = calculate_contacts(atoms, args.distance, args.length)
     print_sscc_table(contacts)
-
 
 if __name__ == "__main__":
     main()
