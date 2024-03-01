@@ -4,7 +4,7 @@
 -------
 
 
-# Entity–relationship model
+## Entity–relationship model
 ![ER-Diagramm.png](https://gitlab2.cip.ifi.lmu.de/bio/propra_ws23/stotko/gruppe-13/-/raw/main/Resources/ER-Diagramm.png?ref_type=heads)
 
 Homestrad: Jede Familie hat eine a_id (von 2 bis n Sequenzen möglich), in Alignments haben alle Sequenzen dieser Familie die gleiche a_id; nicht jedes Alignment ist eine Familie, nur die Alignments aus Homestrad
@@ -13,29 +13,82 @@ Alignments: alle Einträge mit der gleichen a_id gehören zu einem Alignment, ei
 
 Sequences: Type kann DNA, mRNA und protein sequences sein
 
-Bereits erstellt:
-CREATE TABLE Sequences( id VARCHAR(250) PRIMARY KEY, sequence TEXT, type TEXT, pdb_id TEXT);
+###TABLES
+`+----------------------+
+| Tables_in_bioprakt13 |
++----------------------+
+| Alignments           |
+| Homestrad            |
+| Keywords             |
+| Sequences            |
+| Sources              |
+| Swissprot            |
+| has_ac_numbers       |
+| has_alignment        |
+| has_function         |
+| is_fam               |
+| is_in                |
++----------------------+`
 
-CREATE TABLE Homestrad( family_name VARCHAR(250) PRIMARY KEY, a_id INTEGER);
+###Entities
 
-CREATE TABLE Swissprot(accession_nr VARCHAR(250) PRIMARY KEY, sequence_id VARCHAR(250), organism VARCHAR(250));
+`describe Alignments;
++-------------+--------------+------+-----+---------+----------------+
+| Field       | Type         | Null | Key | Default | Extra          |
++-------------+--------------+------+-----+---------+----------------+
+| entry       | int(11)      | NO   | PRI | NULL    | auto_increment |
+| a_id        | int(11)      | YES  |     | NULL    |                |
+| sequence_id | varchar(250) | YES  |     | NULL    |                |
++-------------+--------------+------+-----+---------+----------------+`
 
-CREATE TABLE Keywords(function VARCHAR(250) PRIMARY KEY);
+`describe Homestrad;
++-------------+--------------+------+-----+---------+----------------+
+| Field       | Type         | Null | Key | Default | Extra          |
++-------------+--------------+------+-----+---------+----------------+
+| fam_id      | int(11)      | NO   | PRI | NULL    | auto_increment |
+| family_name | varchar(250) | NO   |     | NULL    |                |
+| a_id        | int(11)      | YES  |     | NULL    |                |
++-------------+--------------+------+-----+---------+----------------+`
 
-CREATE TABLE Sources( accession_nr VARCHAR(250) PRIMARY KEY, name VARCHAR(250));
+`describe Keywords;
++----------+--------------+------+-----+---------+----------------+
+| Field    | Type         | Null | Key | Default | Extra          |
++----------+--------------+------+-----+---------+----------------+
+| func_id  | int(11)      | NO   | PRI | NULL    | auto_increment |
+| function | varchar(250) | NO   |     | NULL    |                |
++----------+--------------+------+-----+---------+----------------+`
 
-CREATE TABLE has_alignment( sequence_id VARCHAR(250), a_id VARCHAR(250));
+'describe Sequences;
++-----------+--------------+------+-----+---------+----------------+
+| Field     | Type         | Null | Key | Default | Extra          |
++-----------+--------------+------+-----+---------+----------------+
+| seq_id    | int(11)      | NO   | PRI | NULL    | auto_increment |
+| header_id | varchar(250) | YES  |     | NULL    |                |
+| sequence  | text         | YES  |     | NULL    |                |
+| type      | text         | YES  |     | NULL    |                |
+| pdb_id    | text         | YES  |     | NULL    |                |
++-----------+--------------+------+-----+---------+----------------+'
 
-CREATE TABLE is_fam( a_id VARCHAR(250), family_name VARCHAR(250));
+`describe Sources;
++--------------+--------------+------+-----+---------+----------------+
+| Field        | Type         | Null | Key | Default | Extra          |
++--------------+--------------+------+-----+---------+----------------+
+| source_id    | int(11)      | NO   | PRI | NULL    | auto_increment |
+| accession_nr | varchar(250) | NO   |     | NULL    |                |
+| name         | varchar(250) | YES  |     | NULL    |                |
++--------------+--------------+------+-----+---------+----------------+`
 
-CREATE TABLE is_in( id VARCHAR(250), accession_nr VARCHAR(250));
+`describe Swissprot;
++--------------+--------------+------+-----+---------+----------------+
+| Field        | Type         | Null | Key | Default | Extra          |
++--------------+--------------+------+-----+---------+----------------+
+| swiss_id     | int(11)      | NO   | PRI | NULL    | auto_increment |
+| accession_nr | varchar(250) | NO   |     | NULL    |                |
+| sequence_id  | varchar(250) | YES  |     | NULL    |                |
+| organism     | varchar(250) | YES  |     | NULL    |                |
++--------------+--------------+------+-----+---------+----------------+`
 
-CREATE TABLE has_function(accession_nr VARCHAR(250), function VARCHAR(250));
-
-CREATE TABLE has_ac_numbers(sequence_id VARCHAR(250),accession_nr VARCHAR(250));
-
-CREATE TABLE Alignments(entry INTEGER AUTO_INCREMENT PRIMARY KEY, a_id INTEGER, sequence_id VARCHAR(250));
-
+-------
 
 # Folder Structure
 Our folder structure is designed to align with the organization of the submission server, promoting uniformity and clarity. Below is an overview of the main directories:
