@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import argparse
+import re
 
 def read_fasta(fasta_file):
 
@@ -24,35 +25,45 @@ def read_fasta(fasta_file):
         sequences[current_id] = current
     return sequences
 
-def find_orfs(sequences):
-    orf_sequences = {}
-    stop_codons = ["TAA", "TAG", "TGA"]
-    start_codon="ATG"
 
-    for sequence_id, sequence in sequences.items():
+def find_orfs(sequence):
+    orf_sequences = []
+    stop_codons = ["TAA", "TAG", "TGA"]
+    start_codon = "ATG"
+    i = 0
+
+    while i < len(sequence):
         orf_sequence = ''
-        # zählt die wievielte orf sequence es bereits ist für den Namen
-        counter=0
-        i = 0
-        # einser schritte, um überlappende zu finden, erst in dreier schritten, wenn ATG gefunden
-        while i in range(len(sequence)):
-            if sequence[i:i+3] != start_codon:
-                i += 1
-                continue
-            #i+3 ist Start Codon
-            orf_sequence += sequence[i:i+3]
-            for j in range(i+3,len(sequence),3):
-                # um i danach zu aktualisieren
-                if sequence[j:j+3] in stop_codons:
-                    orf_sequence += sequence[j:j+3]
-                    i = j+3
-                    break
-                orf_sequence += sequence[j:j+3]
-            # ich lande immer nur hier, wenn ich ein Start Codon gefunden habe
-            orf_sequences[f"{sequence_id}_{counter}"] = orf_sequence
-            counter += 1
-            orf_sequence = ''
+        current_codon = sequence[i:i+3]
+        if current_codon != start_codon:
+            i = i + 3
+            continue
+        orf_sequence += current_codon
+        # da fange ich die Suche nach Stopp Codon an
+        j = i+3
+        while j < len(sequence):
+            current_codon = sequence[j:j+3]
+            orf_sequence += current_codon
+            if current_codon in stop_codons:
+                orf_sequences.append(orf_sequence)
+                i = j+3
+                break
+            j += 3
+            i = j
+
     return orf_sequences
+def complement(sequence):
+    result_sequence = ''
+    for base in sequence:
+        if base == 'A':
+            result_sequence += 'T'
+        elif base == 'T':
+            result_sequence += 'A'
+        elif base == 'C':
+            result_sequence += 'G'
+        elif base == 'G':
+            result_sequence += 'C'
+    return result_sequence[::-1]
 
 
 if __name__ == '__main__':
@@ -63,17 +74,33 @@ if __name__ == '__main__':
     args = pars.parse_args()
 
     sequences = read_fasta(args.fasta)
-    orf_sequences = find_orfs(sequences)
+    orf_sequences = {}
 
-    # ATG ist Start Codon, TAA/ ist Stop Codon
-    # Also ich muss die sequenz in einsere Schritten durchlaufen bis ATG gefunden dann in dreier Schritten bis Stopp Codon, damit auch überlappende entdeckt werden
+    for sequence_id, sequence in sequences.items():
+        orf_sequences[sequence_id] = []
+        orf_sequences[sequence_id] += find_orfs(sequence)
+        orf_sequences[sequence_id] += find_orfs(sequence[1:])
+        orf_sequences[sequence_id] += find_orfs(sequence[2:])
+
+        revers_sequence = complement(sequence)
+        orf_sequences[sequence_id] += find_orfs(revers_sequence)
+        orf_sequences[sequence_id] += find_orfs(revers_sequence[1:])
+        orf_sequences[sequence_id] += find_orfs(revers_sequence[2:])
+
+
     if args.output:
         path = f"{args.output}/{args.fasta.name}"
         with open(path, 'w') as f:
             for sequence_id, sequence in orf_sequences.items():
-                f.write(f">{sequence_id}\n{sequence}")
+                counter = 0
+                for sequence in sequences:
+                    f.write(f">{sequence_id}_{counter}\n{sequence}")
+                    counter += 1
             f.close()
     else:
         # print sequences on commmand line
-        for sequence_id, sequence in orf_sequences.items():
-            print(f">{sequence_id}\n{sequence}")
+        for sequence_id, sequences in orf_sequences.items():
+            counter = 0
+            for sequence in sequences:
+                print(f">{sequence_id}_{counter}\n{sequence}")
+                counter += 1
