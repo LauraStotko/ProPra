@@ -33,18 +33,19 @@ def find_orfs(sequences):
         orf_sequence = ''
         # zählt die wievielte orf sequence es bereits ist für den Namen
         counter=0
+        i = 0
         # einser schritte, um überlappende zu finden, erst in dreier schritten, wenn ATG gefunden
-        for i in range(len(sequence)):
+        while i in range(len(sequence)):
             if sequence[i:i+3] != start_codon:
+                i += 1
                 continue
             #i+3 ist Start Codon
             orf_sequence += sequence[i:i+3]
-            for j in range(i+4,len(sequence),3):
-                # i aktualisieren
-                i = j+4
+            for j in range(i+3,len(sequence),3):
+                # um i danach zu aktualisieren
                 if sequence[j:j+3] in stop_codons:
                     orf_sequence += sequence[j:j+3]
-                    # speichern
+                    i = j+3
                     break
                 orf_sequence += sequence[j:j+3]
             # ich lande immer nur hier, wenn ich ein Start Codon gefunden habe
@@ -69,10 +70,10 @@ if __name__ == '__main__':
     if args.output:
         path = f"{args.output}/{args.fasta.name}"
         with open(path, 'w') as f:
-            #f.write(content)
-            # write sequences
+            for sequence_id, sequence in orf_sequences.items():
+                f.write(f">{sequence_id}\n{sequence}")
             f.close()
     else:
+        # print sequences on commmand line
         for sequence_id, sequence in orf_sequences.items():
             print(f">{sequence_id}\n{sequence}")
-        # print sequences on commmand line
