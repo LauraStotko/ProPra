@@ -28,7 +28,8 @@ if __name__ == '__main__':
     #output auf konsole
     if args.output == '-':
         print(pdb_content.strip())
-    else:                       #output als file
+    else:
+        #output als file
         path = f"{args.output}/{args.id}.pdb"
         with open(path, 'w') as f:
             f.write(pdb_content)
