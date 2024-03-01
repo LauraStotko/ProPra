@@ -13,26 +13,37 @@ def download_pdb(id):
     except urllib.request.HTTPError as e:
         print("Sorry, this PDB ID does not exist")
         return None
-
-
+def download_as_fasta(id):
+    url = f"https://www.rcsb.org/fasta/entry/{id}/display"
+    try:
+        fasta = urllib.request.urlopen(url)
+        if fasta.getcode()==200:
+            return fasta.read().decode('utf-8')
+    except urllib.request.HTTPError as e:
+        print("Sorry, this PDB ID does not exist")
+        return None
 
 if __name__ == '__main__':
-    pars = argparse.ArgumentParser(description="Download the sequence to a SwissProt AC number and receive it in FASTA format")
-    pars.add_argument("--id", help="PDB ID")
-    pars.add_argument("--output", help="output type")
+    pars = argparse.ArgumentParser(description="Download the PDB file to a PDB id")
+    pars.add_argument("--id", help="PDB ID", required=True)
+    pars.add_argument("--output", help="output type", required = True)
+    pars.add_argument("--fasta", help = "Output as fasta", required=False)
     args = pars.parse_args()
 
-    pdb_content = download_pdb(args.id)
+    #pdb_content = download_pdb(args.id)
 
+    if args.fasta:
+        content = download_as_fasta(args.id)
+    else:
+        content = download_pdb(args.id)
 
     #output auf konsole
     if args.output == '-':
-        print(pdb_content.strip())
-    else:
-        #output als file
+        print(content.strip())
+    else:                       #output als file
         path = f"{args.output}/{args.id}.pdb"
         with open(path, 'w') as f:
-            f.write(pdb_content)
+            f.write(content)
             f.close()
 
 
