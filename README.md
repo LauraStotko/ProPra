@@ -13,6 +13,29 @@ Alignments: alle Einträge mit der gleichen a_id gehören zu einem Alignment, ei
 
 Sequences: Type kann DNA, mRNA und protein sequences sein
 
+Bereits erstellt:
+CREATE TABLE Sequences( id VARCHAR(250) PRIMARY KEY, sequence TEXT, type TEXT, pdb_id TEXT);
+
+CREATE TABLE Homestrad( family_name VARCHAR(250) PRIMARY KEY, a_id INTEGER);
+
+CREATE TABLE Swissprot(accession_nr VARCHAR(250) PRIMARY KEY, sequence_id VARCHAR(250), organism VARCHAR(250));
+
+CREATE TABLE Keywords(function VARCHAR(250) PRIMARY KEY);
+
+CREATE TABLE Sources( accession_nr VARCHAR(250) PRIMARY KEY, name VARCHAR(250));
+
+CREATE TABLE has_alignment( sequence_id VARCHAR(250), a_id VARCHAR(250));
+
+CREATE TABLE is_fam( a_id VARCHAR(250), family_name VARCHAR(250));
+
+CREATE TABLE is_in( id VARCHAR(250), accession_nr VARCHAR(250));
+
+CREATE TABLE has_function(accession_nr VARCHAR(250), function VARCHAR(250));
+
+CREATE TABLE has_ac_numbers(sequence_id VARCHAR(250),accession_nr VARCHAR(250));
+
+CREATE TABLE Alignments(entry INTEGER AUTO_INCREMENT PRIMARY KEY, a_id INTEGER, sequence_id VARCHAR(250));
+
 
 # Folder Structure
 Our folder structure is designed to align with the organization of the submission server, promoting uniformity and clarity. Below is an overview of the main directories:
