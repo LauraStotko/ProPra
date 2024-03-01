@@ -13,8 +13,8 @@ Alignments: alle Einträge mit der gleichen a_id gehören zu einem Alignment, ei
 
 Sequences: Type kann DNA, mRNA und protein sequences sein
 
-###TABLES
-`+----------------------+
+##TABLES
++----------------------+
 | Tables_in_bioprakt13 |
 +----------------------+
 | Alignments           |
@@ -28,37 +28,37 @@ Sequences: Type kann DNA, mRNA und protein sequences sein
 | has_function         |
 | is_fam               |
 | is_in                |
-+----------------------+`
++----------------------+
 
-###Entities
+##Entities
 
-`describe Alignments;
+describe Alignments;
 +-------------+--------------+------+-----+---------+----------------+
 | Field       | Type         | Null | Key | Default | Extra          |
 +-------------+--------------+------+-----+---------+----------------+
 | entry       | int(11)      | NO   | PRI | NULL    | auto_increment |
 | a_id        | int(11)      | YES  |     | NULL    |                |
 | sequence_id | varchar(250) | YES  |     | NULL    |                |
-+-------------+--------------+------+-----+---------+----------------+`
++-------------+--------------+------+-----+---------+----------------+
 
-`describe Homestrad;
+describe Homestrad;
 +-------------+--------------+------+-----+---------+----------------+
 | Field       | Type         | Null | Key | Default | Extra          |
 +-------------+--------------+------+-----+---------+----------------+
 | fam_id      | int(11)      | NO   | PRI | NULL    | auto_increment |
 | family_name | varchar(250) | NO   |     | NULL    |                |
 | a_id        | int(11)      | YES  |     | NULL    |                |
-+-------------+--------------+------+-----+---------+----------------+`
++-------------+--------------+------+-----+---------+----------------+
 
-`describe Keywords;
+describe Keywords;
 +----------+--------------+------+-----+---------+----------------+
 | Field    | Type         | Null | Key | Default | Extra          |
 +----------+--------------+------+-----+---------+----------------+
 | func_id  | int(11)      | NO   | PRI | NULL    | auto_increment |
 | function | varchar(250) | NO   |     | NULL    |                |
-+----------+--------------+------+-----+---------+----------------+`
++----------+--------------+------+-----+---------+----------------+
 
-'describe Sequences;
+describe Sequences;
 +-----------+--------------+------+-----+---------+----------------+
 | Field     | Type         | Null | Key | Default | Extra          |
 +-----------+--------------+------+-----+---------+----------------+
@@ -67,18 +67,18 @@ Sequences: Type kann DNA, mRNA und protein sequences sein
 | sequence  | text         | YES  |     | NULL    |                |
 | type      | text         | YES  |     | NULL    |                |
 | pdb_id    | text         | YES  |     | NULL    |                |
-+-----------+--------------+------+-----+---------+----------------+'
++-----------+--------------+------+-----+---------+----------------+
 
-`describe Sources;
+describe Sources;
 +--------------+--------------+------+-----+---------+----------------+
 | Field        | Type         | Null | Key | Default | Extra          |
 +--------------+--------------+------+-----+---------+----------------+
 | source_id    | int(11)      | NO   | PRI | NULL    | auto_increment |
 | accession_nr | varchar(250) | NO   |     | NULL    |                |
 | name         | varchar(250) | YES  |     | NULL    |                |
-+--------------+--------------+------+-----+---------+----------------+`
++--------------+--------------+------+-----+---------+----------------+
 
-`describe Swissprot;
+describe Swissprot;
 +--------------+--------------+------+-----+---------+----------------+
 | Field        | Type         | Null | Key | Default | Extra          |
 +--------------+--------------+------+-----+---------+----------------+
@@ -86,7 +86,7 @@ Sequences: Type kann DNA, mRNA und protein sequences sein
 | accession_nr | varchar(250) | NO   |     | NULL    |                |
 | sequence_id  | varchar(250) | YES  |     | NULL    |                |
 | organism     | varchar(250) | YES  |     | NULL    |                |
-+--------------+--------------+------+-----+---------+----------------+`
++--------------+--------------+------+-----+---------+----------------+
 
 -------
 
