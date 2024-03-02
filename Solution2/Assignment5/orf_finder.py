@@ -27,13 +27,14 @@ def read_fasta(fasta_file):
     return sequences
 
 def write_fasta_format(orf_sequences):
-    all_sequences_sorted = {}
+
+    output_sequences = {}
     for sequence_id, sequences in orf_sequences.items():
         counter = 0
         for sequence in sequences:
-            all_sequences_sorted[f">{sequence_id}_{counter}"] = sequence
+            output_sequences[f">{sequence_id}_{counter}"] = sequence
             counter += 1
-    return all_sequences_sorted
+    return output_sequences
 
 def find_orfs(sequence):
     orf_sequences = []
@@ -55,8 +56,10 @@ def find_orfs(sequence):
             orf_sequence += current_codon
             if current_codon in stop_codons:
                 orf_sequences.append(orf_sequence)
+                # i aktualsieren
                 i = j+3
                 break
+            # j auf neuen Codon aktualsieren und i auf j setzen, falls Schleife endet
             j += 3
             i = j
 
@@ -107,6 +110,7 @@ if __name__ == '__main__':
     orf_sequences = {}
 
     for sequence_id, sequence in sequences.items():
+        # get orfs for each frame and for the reverse complement
         orf_sequences[sequence_id] = []
         orf_sequences[sequence_id] += find_orfs(sequence)
         orf_sequences[sequence_id] += find_orfs(sequence[1:])
@@ -124,6 +128,7 @@ if __name__ == '__main__':
         #upload to db
         upload_to_database(output_sequences)
 
+    # Output options
     if args.output:
         path = f"{args.output}/{args.fasta.name}_orfs"
         with open(path, 'w') as f:
