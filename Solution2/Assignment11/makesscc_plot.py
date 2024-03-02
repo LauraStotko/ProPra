@@ -3,6 +3,8 @@
 import argparse
 import math
 import requests
+import numpy as np
+import matplotlib.pyplot as plt
 
 
 def download_pdb(pdb_id):
@@ -97,24 +99,54 @@ def print_sscc_table(contacts):
 
     print("\n".join(output))
 
+def create_distance_matrix(atoms):
+    size = len(atoms)
+    distance_matrix = np.zeros((size, size))
+
+    for i in range(size):
+        for j in range(i + 1, size):
+            distance = calculate_distance(atoms[i], atoms[j])
+            distance_matrix[i][j] = distance
+            distance_matrix[j][i] = distance
+
+    return distance_matrix
+
+
+def plot_heatmap(distance_matrix, file_path=None, title="Protein Abstands-Heatmap"):
+    plt.figure(figsize=(10, 8))
+    plt.title(title)
+    plt.imshow(distance_matrix, cmap='viridis', interpolation='nearest')
+    plt.colorbar(label='Abstand')
+    plt.xlabel('Atom Index')
+    plt.ylabel('Atom Index')
+    if file_path:
+        plt.savefig(file_path)
+        print(f"Heatmap gespeichert unter: {file_path}")
+    else:
+        plt.show()
+
 
 def main():
-    parser = argparse.ArgumentParser(description="Erzeugt eine Contact Number Datei (*.sscc) für eine gegebene PDB ID.")
+    parser = argparse.ArgumentParser(description="Skript zur Analyse von PDB-Dateien und Erzeugung einer Heatmap.")
     parser.add_argument('--id', type=str, required=True, help="PDB ID")
     parser.add_argument('--distance', type=float, required=True, help="Kontaktdistanz")
     parser.add_argument('--type', type=str, required=True, help="Atomtyp")
     parser.add_argument('--length', type=int, required=True, help="Sequenzdistanz für lokale Kontakte")
+    parser.add_argument('--contactmatrix', type=str, help="Zielpfad für die Speicherung der Kontaktmatrix-Datei")
+    parser.add_argument('--heatmap', type=str, help="Pfad, unter dem die Heatmap gespeichert wird")
 
     args = parser.parse_args()
 
-    # Lese PDB-Daten einmalig ein
     pdb_data = download_pdb(args.id)
-
-    # Verarbeite die PDB-Daten
     ss_info = parse_secondary_structure(pdb_data)
     atoms = parse_pdb(pdb_data, args.type, ss_info)
-    contacts = calculate_contacts(atoms, args.distance, args.length)
-    print_sscc_table(contacts)
+    distance_matrix = create_distance_matrix(atoms)
+
+    if args.heatmap:
+        plot_heatmap(distance_matrix, args.heatmap)
+    else:
+        print("Kein Pfad für die Heatmap angegeben, Heatmap wird angezeigt.")
+        plot_heatmap(distance_matrix)
 
 if __name__ == "__main__":
     main()

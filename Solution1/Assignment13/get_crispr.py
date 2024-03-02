@@ -52,12 +52,16 @@ def format_sequences_in_fasta(crispr_matches):
 def main():
     parser = argparse.ArgumentParser(description="Findet CRISPR/Cas-Erkennungssequenzen in FASTA-Dateien.")
     parser.add_argument('--fasta', type=argparse.FileType('r'), required=True, help="Pfad zur FASTA-Datei")
+    parser.add_argument('--output', type=str, required=True, help="Pfad zur Ausgabedatei")
     args = parser.parse_args()
 
     sequences = read_fasta(args.fasta)
     crispr_matches = find_crispr_sequences(sequences)
     fasta_formatted_str = format_sequences_in_fasta(crispr_matches)
-    print(fasta_formatted_str)
+
+    # Schreiben der formatierten Sequenzen in eine Datei
+    with open(args.output, 'w') as output_file:
+        output_file.write(fasta_formatted_str)
 
 
 if __name__ == "__main__":
