@@ -9,7 +9,7 @@ def parse_arguments():
     parser.add_argument("--keyword", nargs='+', help="List of keywords for filtering", required=True)
     # 'nargs': + since we accept one or more values
     parser.add_argument("--swissprot", type=argparse.FileType('r'), help="Swissprot file")
-    parser.add_argument("--db", help="Database")
+    parser.add_argument("--db", help="Database", action='store_true')
     return parser.parse_args()
 
 
@@ -20,7 +20,7 @@ def parse_entry_line_type(line, line_type):
         line = line[:-1]
 
     line_type_list = []
-    line = line.strip(f'{line_type}   ')
+    line = line.strip(line_type + '   ')
 
     for line_type in line.split(';'):
         line_type = line_type.strip().strip('.')
@@ -42,9 +42,11 @@ def update_ac_output_list(list_of_entry_keywords, keywords, all_ac_numbers, list
     return all_ac_numbers
 
 
-def print_result(result):
+def print_db_result(result):
     for entry in result:
-        print(entry)
+        ac_number = str(entry)
+        ac_number=ac_number.strip('(\'').strip('\',)')
+        print(ac_number)
 
 
 def execute_database_query(database, keywords):
@@ -62,10 +64,10 @@ def execute_database_query(database, keywords):
     # Create the SQL query
     # Insert the placeholders into the SQL query
     query = '''
-    SELECT DISTINCT accession_nr 
-    FROM has_function 
-    WHERE function IN ({}) 
-    ORDER BY accession_nr;
+        SELECT DISTINCT swiss.accession_nr 
+        FROM Swissprot swiss, has_function hf, Keywords k
+        WHERE swiss.swiss_id = hf.swiss_id AND hf.func_id = k.func_id AND k.function IN ({})
+        ORDER BY swiss.accession_nr;
     '''.format(placeholders)
 
     # Execute the SQL query with keywords as parameters
@@ -85,6 +87,7 @@ def main():
 
     # Get keywords & save as set to remove duplicates
     keywords = set(args.keyword)
+
 
     # Check for swissprot input
     if args.swissprot:
@@ -117,39 +120,31 @@ def main():
         # Convert the set to a sorted list
         cleaned_ac_numbers = sorted(all_ac_numbers)
 
-        # Print the results
-        print_result(cleaned_ac_numbers)
+        # Print the result
+        for ac_number in cleaned_ac_numbers:
+            print(ac_number)
 
     # Handle Database
     else:
-        '''
-        Database name: has_function(accession_nr, function) 
-                        -> unique entries: contains each function (keyword) for it's accession_nr
-        Query:
-            SELECT DISTINCT accession_nr
-            FROM has_function
-            WHERE function IN (keyword1, ..., keywordX) -> have to insert keywords from input (as list)
-            ORDER BY accession_nr
-        '''
 
         # Connect to the database
-        has_function = mysql.connector.connect(
+        connection = mysql.connector.connect(
             host="mysql2-ext.bio.ifi.lmu.de",
             user="bioprakt13",
             password="$1$S4kE4pw1$8ANT55zOf1nKHgoau9K0A0",
-            database="has_function"
+            database="bioprakt13"
         )
 
         try:
             # Execute the database query
-            result = execute_database_query(has_function, args.keyword)
+            result = execute_database_query(connection, args.keyword)
 
             # Print the results
-            print_result(result)
+            print_db_result(result)
 
         finally:
             # Close the database connection
-            has_function.close()
+            connection.close()
 
 
 if __name__ == "__main__":
