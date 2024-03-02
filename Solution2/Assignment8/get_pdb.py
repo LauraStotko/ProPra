@@ -13,6 +13,7 @@ def download_pdb(id):
     except urllib.request.HTTPError as e:
         print("Sorry, this PDB ID does not exist")
         return None
+
 def download_as_fasta(id):
     url = f"https://www.rcsb.org/fasta/entry/{id}/display"
     try:
@@ -29,8 +30,6 @@ if __name__ == '__main__':
     pars.add_argument("--output", help="output type", required = True)
     pars.add_argument("--fasta", help = "Output as fasta", required=False)
     args = pars.parse_args()
-
-    #pdb_content = download_pdb(args.id)
 
     if args.fasta:
         content = download_as_fasta(args.id)
