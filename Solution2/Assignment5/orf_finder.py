@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 import argparse
+import mysql.connector
+
 
 
 def read_fasta(fasta_file):
@@ -64,7 +66,21 @@ def reverse_complement(sequence):
         elif base == 'G':
             result_sequence += 'C'
     return result_sequence[::-1]
+def upload_to_database(orf_sequences):
+    #Verbinden mit Dantenbank
+    db = mysql.connector.connect(
+        host="mysql2-ext.bio.ifi.lmu.de",
+        user="bioprakt13",
+        password="your_password",
+        database="your_database"
+    )
+    cursor = db.cursor()
 
+    for sequence_id, sequences in orf_sequences.items():
+        db.commit()
+
+    id = cursor.lastrowid
+    db.close()
 
 if __name__ == '__main__':
     pars = argparse.ArgumentParser(description="Find ORFs")
@@ -75,6 +91,7 @@ if __name__ == '__main__':
 
     sequences = read_fasta(args.fasta)
     orf_sequences = {}
+    output_sequences = {}
 
     for sequence_id, sequence in sequences.items():
         orf_sequences[sequence_id] = []
