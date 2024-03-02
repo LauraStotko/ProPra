@@ -9,7 +9,6 @@ DB_USER = 'bioprakt13'
 DB_PASSWORD = '$1$S4kE4pw1$8ANT55zOf1nKHgoau9K0A0'
 DB_NAME = 'bioprakt13'
 ROOT_DIR = '/mnt/biocluster/praktikum/bioprakt/Data/HOMSTRAD_DB/2019_Feb'
-#ROOT_DIR = "/home/anna/Documents/Blockteil/2019_Feb"
 
 
 
