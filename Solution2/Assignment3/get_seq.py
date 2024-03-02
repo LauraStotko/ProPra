@@ -14,18 +14,19 @@ def get_sequences(ids, source):
     db = mysql.connector.connect(
         host="mysql2-ext.bio.ifi.lmu.de",
         user="bioprakt13",
-        password="your_password",
-        database="your_database"
+        password="$1$S4kE4pw1$8ANT55zOf1nKHgoau9K0A0",
+        database="bioprakt13"
     )
     cursor = db.cursor()
     query = '''
     SELECT s.header_id, s.sequence
     FROM Sequences s, has_ac_numbers h, Sources sc
     WHERE sc.name = %s
-    AND h.accession_nr = %s
-    AND sc.accession_nr = h.accession_nr
+    AND sc.accession_nr = %s
+    AND sc.source_id = h.source_id
     AND h.seq_id = s.seq_id
     '''
+
     for id in ids:
         parameter = (source, id)
         cursor.execute(query,parameter)
