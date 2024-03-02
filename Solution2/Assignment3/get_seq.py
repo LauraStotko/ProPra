@@ -18,6 +18,7 @@ def get_sequences(ids, source):
         database="bioprakt13"
     )
     cursor = db.cursor()
+
     query = '''
     SELECT s.header_id, s.sequence
     FROM Sequences s, has_ac_numbers h, Sources sc
@@ -30,13 +31,17 @@ def get_sequences(ids, source):
     for id in ids:
         parameter = (source, id)
         cursor.execute(query,parameter)
-        results = cursor.fetchall()
+
         #safe in dictionary
-        for header_id, sequence in results:
+        for row in cursor.fetchall():
+            header_id, sequence = row
             sequences[header_id] = sequence
 
     cursor.close()
     db.close()
+
+    # alle Sequences, die mit der ID identifiziert sind
+    return sequences
 
 
 if __name__ == '__main__':

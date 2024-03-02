@@ -74,7 +74,7 @@ def reverse_complement(sequence):
             result_sequence += 'C'
     return result_sequence[::-1]
 
-def upload_to_database(orf_sequences):
+def upload_to_database(output_sequences):
     #Verbinden mit Dantenbank
     db = mysql.connector.connect(
         host="mysql2-ext.bio.ifi.lmu.de",
@@ -84,12 +84,12 @@ def upload_to_database(orf_sequences):
     )
     cursor = db.cursor()
     query='''
-    INSERT INTO Sequences(header_id, sequence, type) VALUES (%s, %s, "ORF")
+    INSERT INTO Sequences SET header_id = %s, sequence = %s, type= "ORF";
     '''
 
-    for sequence_id, sequences in orf_sequences.items():
-        parameter = sequence_id,se
-        cursor.executeUpdate(query)
+    for sequence_id, sequence in output_sequences.items():
+        parameter = (sequence_id,sequence)
+        cursor.execute(query,parameter)
 
     db.commit()
     id = cursor.lastrowid
@@ -100,7 +100,7 @@ if __name__ == '__main__':
     pars = argparse.ArgumentParser(description="Find ORFs")
     pars.add_argument("--fasta", type=argparse.FileType('r'), required=True)
     pars.add_argument("--output", help= "path to output file", required=False)
-    # add other arguments
+    pars.add_argument("--db", help='upload into database', action='store_true')
     args = pars.parse_args()
 
     sequences = read_fasta(args.fasta)
@@ -119,6 +119,10 @@ if __name__ == '__main__':
 
     output_sequences = {}
     output_sequences = write_fasta_format(orf_sequences)
+
+    if args.db:
+        #upload to db
+        upload_to_database(output_sequences)
 
     if args.output:
         path = f"{args.output}/{args.fasta.name}_orfs"
