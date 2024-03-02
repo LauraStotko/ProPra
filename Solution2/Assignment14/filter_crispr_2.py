@@ -2,15 +2,6 @@
 
 from argparse import ArgumentParser
 
-def parse_arguments():
-    # Parse command line arguments.
-    parser = ArgumentParser(description="Filter SAM file and output FASTA file.")
-    parser.add_argument("--sam", type=str, required=True, help="Input SAM file.")
-    parser.add_argument("--no-off-targets", type=str, help="Output FASTA file for sequences without off-targets.")
-    parser.add_argument("--with-mismatch", type=str, help="Output FASTA file for sequences with mismatches.")
-    return parser.parse_args()
-
-
 def read_sam_file(sam_file):
     # Liest eine SAM-Datei und extrahiert Sequenzen mit gültigem Alignment.
     sequences = []  # Initialisiere die Liste für die gesammelten Sequenzen.
@@ -23,20 +14,15 @@ def read_sam_file(sam_file):
                     sequences.append((parts[0], parts[9]))  # Füge die Read-ID und die Sequenz zur Liste hinzu.
     return sequences
 
-
 def filter_sequences(sequences, with_mismatch=False):
-    # Filter sequences based on presence of mismatches.
     filtered_seqs = []
-    for seq in sequences:
-        # Assuming the optional fields start from index 11
-        tags = {tag.split(':')[0]: tag.split(':')[-1] for tag in seq[11:]}
+    for seq in sequences: # Iteriere über alle Sequenzen
+        tags = {tag.split(':')[0]: tag.split(':')[-1] for tag in seq[11:]} # Extrahiere die Tags und speichere sie in einem Dictionary
         if with_mismatch:
-            # Include sequence if NM (edit distance) tag is present and greater than 0
-            if 'NM' in tags and int(tags['NM']) > 0:
+            if 'NM' in tags and int(tags['NM']) > 0: # Überprüfe, ob die Sequenz Mismatches enthält
                 filtered_seqs.append(seq)
         else:
-            # Include sequence if NM tag is not present or 0
-            if 'NM' not in tags or int(tags['NM']) == 0:
+            if 'NM' not in tags or int(tags['NM']) == 0: # Überprüfe, ob die Sequenz keine Mismatches enthält
                 filtered_seqs.append(seq)
     return filtered_seqs
 
@@ -50,6 +36,12 @@ def write_fasta(sequences, output_file):
 
 
 def main():
+    parser = ArgumentParser(description="Filter SAM file and output FASTA file.")
+    parser.add_argument("--sam", type=str, required=True, help="Input SAM file.")
+    parser.add_argument("--no-off-targets", type=str, help="Output FASTA file for sequences without off-targets.")
+    parser.add_argument("--with-mismatch", type=str, help="Output FASTA file for sequences with mismatches.")
+    return parser.parse_args()
+
     args = parse_arguments()
 
     # Read and filter sequences
