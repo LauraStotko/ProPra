@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 import argparse
-import re
+
 
 def read_fasta(fasta_file):
 
@@ -52,7 +52,7 @@ def find_orfs(sequence):
             i = j
 
     return orf_sequences
-def complement(sequence):
+def reverse_complement(sequence):
     result_sequence = ''
     for base in sequence:
         if base == 'A':
@@ -82,19 +82,19 @@ if __name__ == '__main__':
         orf_sequences[sequence_id] += find_orfs(sequence[1:])
         orf_sequences[sequence_id] += find_orfs(sequence[2:])
 
-        revers_sequence = complement(sequence)
+        revers_sequence = reverse_complement(sequence)
         orf_sequences[sequence_id] += find_orfs(revers_sequence)
         orf_sequences[sequence_id] += find_orfs(revers_sequence[1:])
         orf_sequences[sequence_id] += find_orfs(revers_sequence[2:])
 
 
     if args.output:
-        path = f"{args.output}/{args.fasta.name}"
+        path = f"{args.output}/{args.fasta.name}_orfs"
         with open(path, 'w') as f:
             for sequence_id, sequence in orf_sequences.items():
                 counter = 0
-                for sequence in sequences:
-                    f.write(f">{sequence_id}_{counter}\n{sequence}")
+                for seq in sequence:
+                    f.write(f">{sequence_id}_{counter}\n{seq}\n")
                     counter += 1
             f.close()
     else:
@@ -102,5 +102,5 @@ if __name__ == '__main__':
         for sequence_id, sequences in orf_sequences.items():
             counter = 0
             for sequence in sequences:
-                print(f">{sequence_id}_{counter}\n{sequence}")
+                print(f">{sequence_id}_{counter}\n{sequence}\n")
                 counter += 1
