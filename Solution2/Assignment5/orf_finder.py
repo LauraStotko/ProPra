@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import argparse
-import re
+import mysql.connector
+
 
 def read_fasta(fasta_file):
 
@@ -25,6 +26,15 @@ def read_fasta(fasta_file):
         sequences[current_id] = current
     return sequences
 
+def write_fasta_format(orf_sequences):
+
+    output_sequences = {}
+    for sequence_id, sequences in orf_sequences.items():
+        counter = 0
+        for sequence in sequences:
+            output_sequences[f">{sequence_id}_{counter}"] = sequence
+            counter += 1
+    return output_sequences
 
 def find_orfs(sequence):
     orf_sequences = []
@@ -46,13 +56,15 @@ def find_orfs(sequence):
             orf_sequence += current_codon
             if current_codon in stop_codons:
                 orf_sequences.append(orf_sequence)
+                # i aktualsieren
                 i = j+3
                 break
+            # j auf neuen Codon aktualsieren und i auf j setzen, falls Schleife endet
             j += 3
             i = j
 
     return orf_sequences
-def complement(sequence):
+def reverse_complement(sequence):
     result_sequence = ''
     for base in sequence:
         if base == 'A':
@@ -65,42 +77,65 @@ def complement(sequence):
             result_sequence += 'C'
     return result_sequence[::-1]
 
+def upload_to_database(output_sequences):
+    #Verbinden mit Dantenbank
+    db = mysql.connector.connect(
+        host="mysql2-ext.bio.ifi.lmu.de",
+        user="bioprakt13",
+        password="$1$S4kE4pw1$8ANT55zOf1nKHgoau9K0A0",
+        database="bioprakt13"
+    )
+    cursor = db.cursor()
+    query='''
+    INSERT INTO Sequences SET header_id = %s, sequence = %s, type= "ORF";
+    '''
+
+    for sequence_id, sequence in output_sequences.items():
+        parameter = (sequence_id,sequence)
+        cursor.execute(query,parameter)
+
+    db.commit()
+    id = cursor.lastrowid
+    print(id)
+    db.close()
 
 if __name__ == '__main__':
     pars = argparse.ArgumentParser(description="Find ORFs")
     pars.add_argument("--fasta", type=argparse.FileType('r'), required=True)
     pars.add_argument("--output", help= "path to output file", required=False)
-    # add other arguments
+    pars.add_argument("--db", help='upload into database', action='store_true')
     args = pars.parse_args()
 
     sequences = read_fasta(args.fasta)
     orf_sequences = {}
 
     for sequence_id, sequence in sequences.items():
+        # get orfs for each frame and for the reverse complement
         orf_sequences[sequence_id] = []
         orf_sequences[sequence_id] += find_orfs(sequence)
         orf_sequences[sequence_id] += find_orfs(sequence[1:])
         orf_sequences[sequence_id] += find_orfs(sequence[2:])
 
-        revers_sequence = complement(sequence)
+        revers_sequence = reverse_complement(sequence)
         orf_sequences[sequence_id] += find_orfs(revers_sequence)
         orf_sequences[sequence_id] += find_orfs(revers_sequence[1:])
         orf_sequences[sequence_id] += find_orfs(revers_sequence[2:])
 
+    output_sequences = {}
+    output_sequences = write_fasta_format(orf_sequences)
 
+    if args.db:
+        #upload to db
+        upload_to_database(output_sequences)
+
+    # Output options
     if args.output:
-        path = f"{args.output}/{args.fasta.name}"
+        path = f"{args.output}/{args.fasta.name}_orfs"
         with open(path, 'w') as f:
-            for sequence_id, sequence in orf_sequences.items():
-                counter = 0
-                for sequence in sequences:
-                    f.write(f">{sequence_id}_{counter}\n{sequence}")
-                    counter += 1
+            for sequence_id, sequence in output_sequences.items():
+                f.write(f"{sequence_id}\n{sequence}\n")
             f.close()
     else:
         # print sequences on commmand line
-        for sequence_id, sequences in orf_sequences.items():
-            counter = 0
-            for sequence in sequences:
-                print(f">{sequence_id}_{counter}\n{sequence}")
-                counter += 1
+        for sequence_id, sequence in output_sequences.items():
+           print(f"{sequence_id}\n{sequence}\n")

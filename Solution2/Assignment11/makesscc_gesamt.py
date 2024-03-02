@@ -3,6 +3,8 @@
 import argparse
 import math
 import requests
+import numpy as np
+import matplotlib.pyplot as plt
 
 
 def download_pdb(pdb_id):
@@ -13,7 +15,7 @@ def download_pdb(pdb_id):
     else:
         raise Exception(f"Failed to download PDB file for ID {pdb_id}")
 
-# Dictionary für Aminosäure-Abkürzungen
+
 aa_dict = {
     "ALA": "A", "ARG": "R", "ASN": "N", "ASP": "D", "CYS": "C", "GLU": "E",
     "GLN": "Q", "GLY": "G", "HIS": "H", "ILE": "I", "LEU": "L", "LYS": "K",
@@ -21,22 +23,24 @@ aa_dict = {
     "TYR": "Y", "VAL": "V"
 }
 
+
 def parse_secondary_structure(pdb_data):
     ss_info = {}
     for line in pdb_data.splitlines():
         if line.startswith('HELIX'):
-            chain = line[19]  # Extrahiere die Kette für die Helix
+            chain = line[19]
             start = int(line[21:25].strip())
             end = int(line[33:37].strip())
             for i in range(start, end + 1):
-                ss_info[(chain, i)] = 'H'  # Speichere Helix-Info mit Kette und Position
+                ss_info[(chain, i)] = 'H'
         elif line.startswith('SHEET'):
-            chain = line[21]  # Extrahiere die Kette für das Sheet
+            chain = line[21]
             start = int(line[22:26].strip())
             end = int(line[33:37].strip())
             for i in range(start, end + 1):
-                ss_info[(chain, i)] = 'E'  # Speichere Sheet-Info mit Kette und Position
+                ss_info[(chain, i)] = 'E'
     return ss_info
+
 
 def parse_pdb(pdb_data, atom_type, ss_info):
     atoms = []
@@ -53,49 +57,35 @@ def parse_pdb(pdb_data, atom_type, ss_info):
             chain = line[21]
             pos = int(line[22:26].strip())
             serial = int(line[6:11].strip())
-            aa = aa_dict.get(line[17:20].strip().upper(), 'X')  # Benutze das Dictionary
+            aa = aa_dict.get(line[17:20].strip().upper(), 'X')
             x = float(line[30:38].strip())
             y = float(line[38:46].strip())
             z = float(line[46:54].strip())
-            ss = ss_info.get((chain, pos), 'C')  # Verwende Tupel aus Kette und Position als Schlüssel
+            ss = ss_info.get((chain, pos), 'C')
             atoms.append((chain, pos, serial, aa, x, y, z, ss))
     return atoms
 
 
-
 def calculate_distance(atom1, atom2):
-    # Calculate the Euclidean distance between two atoms.
     return math.sqrt((atom1[4] - atom2[4])**2 + (atom1[5] - atom2[5])**2 + (atom1[6] - atom2[6])**2)
 
 
-def calculate_contacts(atoms, distance_threshold, length_threshold):
-    contacts = []
-    for i, atom1 in enumerate(atoms):
-        global_contacts = 0
-        local_contacts = 0
-        for j, atom2 in enumerate(atoms):
-            if i != j:
-                # Überprüfe, ob die Atome zur selben Kette gehören
-                same_chain = atom1[0] == atom2[0]
-
-                distance = calculate_distance(atom1, atom2)
-                if distance < distance_threshold:
-                    # Überprüfe, ob der Kontakt lokal ist (basierend auf Sequenzdistanz und gleicher Kette)
-                    if abs(atom1[1] - atom2[1]) < length_threshold and same_chain:
-                        local_contacts += 1
-                    else:
-                        global_contacts += 1
-        contacts.append((atom1[0], atom1[1], atom1[2], atom1[3], atom1[7], global_contacts, local_contacts))
-    return contacts
+def generate_contact_matrix(atoms, distance_threshold):
+    n = len(atoms)
+    c = np.zeros((n, n))
+    for i in range(n):
+        for j in range(i+1, n):
+            if calculate_distance(atoms[i], atoms[j]) < distance_threshold:
+                c[i, j] = c[j, i] = 1
+    return c
 
 
-def print_sscc_table(contacts):
-    # Print the .sscc table.
-    output = ["chain\tpos\tserial\taa\tss\tglobal\tlocal"]
-    for contact in contacts:
-        output.append(f"{contact[0]}\t{contact[1]}\t{contact[2]}\t{contact[3]}\t{contact[4]}\t{contact[5]}\t{contact[6]}")
-
-    print("\n".join(output))
+def plot_heatmap(c, file_name):
+    plt.figure(figsize=(10, 8))
+    plt.imshow(c, cmap='hot', interpolation='nearest')
+    plt.colorbar()
+    plt.savefig(file_name)
+    plt.show()
 
 
 def main():
@@ -107,14 +97,13 @@ def main():
 
     args = parser.parse_args()
 
-    # Lese PDB-Daten einmalig ein
     pdb_data = download_pdb(args.id)
-
-    # Verarbeite die PDB-Daten
     ss_info = parse_secondary_structure(pdb_data)
     atoms = parse_pdb(pdb_data, args.type, ss_info)
-    contacts = calculate_contacts(atoms, args.distance, args.length)
-    print_sscc_table(contacts)
+    c = generate_contact_matrix(atoms, args.distance)
+    np.savetxt(f"{args.id}_contact_matrix.csv", c, delimiter=",")
+    plot_heatmap(c, f"{args.id}_heatmap.png")
+
 
 if __name__ == "__main__":
     main()

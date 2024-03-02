@@ -3,6 +3,8 @@
 import argparse
 import math
 import requests
+import numpy as np
+import matplotlib.pyplot as plt
 
 
 def download_pdb(pdb_id):
@@ -98,12 +100,39 @@ def print_sscc_table(contacts):
     print("\n".join(output))
 
 
+def create_contact_matrix(atoms, distance_threshold, length_threshold):
+    # Stelle sicher, dass wir eine korrekte Anzahl von Atomen haben
+    if len(atoms) == 0:
+        return np.array([], dtype=int).reshape(0, 0)  # Leere 2D-Matrix für den Fall, dass keine Atome vorhanden sind
+
+    size = len(atoms)
+    matrix = np.zeros((size, size), dtype=int)
+
+    for i in range(size):
+        for j in range(i + 1, size):
+            distance = calculate_distance(atoms[i], atoms[j])
+            # Überprüfe die Distanz und, ob es sich nicht um denselben Atom handelt
+            if distance < distance_threshold and abs(atoms[i][1] - atoms[j][1]) >= length_threshold:
+                matrix[i][j] = 1
+                matrix[j][i] = 1
+
+    return matrix
+
+
+def save_matrix_to_file(matrix, file_path):
+    if matrix.ndim != 2:
+        raise ValueError("Die übergebene Matrix ist nicht 2-dimensional.")
+
+    # Speichere die Matrix als Textdatei, Trennzeichen ist ein Leerzeichen
+    np.savetxt(file_path, matrix, fmt='%d', delimiter=' ')
+
 def main():
     parser = argparse.ArgumentParser(description="Erzeugt eine Contact Number Datei (*.sscc) für eine gegebene PDB ID.")
     parser.add_argument('--id', type=str, required=True, help="PDB ID")
     parser.add_argument('--distance', type=float, required=True, help="Kontaktdistanz")
     parser.add_argument('--type', type=str, required=True, help="Atomtyp")
     parser.add_argument('--length', type=int, required=True, help="Sequenzdistanz für lokale Kontakte")
+    parser.add_argument('--contactmatrix', type=str, help="Zielpfad für die Speicherung der Kontaktmatrix-Datei")
 
     args = parser.parse_args()
 
@@ -113,8 +142,15 @@ def main():
     # Verarbeite die PDB-Daten
     ss_info = parse_secondary_structure(pdb_data)
     atoms = parse_pdb(pdb_data, args.type, ss_info)
-    contacts = calculate_contacts(atoms, args.distance, args.length)
-    print_sscc_table(contacts)
+
+    # Erzeuge und speichere die Kontaktmatrix, falls gewünscht
+    if args.contactmatrix:
+        contact_matrix = create_contact_matrix(atoms, args.distance, args.length)
+        save_matrix_to_file(contact_matrix, args.contactmatrix)
+        print(f"Kontaktmatrix gespeichert unter: {args.contactmatrix}")
+    else:
+        contacts = calculate_contacts(atoms, args.distance, args.length)
+        print_sscc_table(contacts)
 
 if __name__ == "__main__":
     main()
