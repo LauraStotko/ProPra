@@ -3,7 +3,6 @@ import argparse
 import mysql.connector
 
 
-
 def read_fasta(fasta_file):
 
     sequences = {}
@@ -27,6 +26,14 @@ def read_fasta(fasta_file):
         sequences[current_id] = current
     return sequences
 
+def write_fasta_format(orf_sequences):
+    all_sequences_sorted = {}
+    for sequence_id, sequences in orf_sequences.items():
+        counter = 0
+        for sequence in sequences:
+            all_sequences_sorted[f">{sequence_id}_{counter}"] = sequence
+            counter += 1
+    return all_sequences_sorted
 
 def find_orfs(sequence):
     orf_sequences = []
@@ -66,20 +73,27 @@ def reverse_complement(sequence):
         elif base == 'G':
             result_sequence += 'C'
     return result_sequence[::-1]
+
 def upload_to_database(orf_sequences):
     #Verbinden mit Dantenbank
     db = mysql.connector.connect(
         host="mysql2-ext.bio.ifi.lmu.de",
         user="bioprakt13",
-        password="your_password",
-        database="your_database"
+        password="$1$S4kE4pw1$8ANT55zOf1nKHgoau9K0A0",
+        database="bioprakt13"
     )
     cursor = db.cursor()
+    query='''
+    INSERT INTO Sequences(header_id, sequence, type) VALUES (%s, %s, "ORF")
+    '''
 
     for sequence_id, sequences in orf_sequences.items():
-        db.commit()
+        parameter = sequence_id,se
+        cursor.executeUpdate(query)
 
+    db.commit()
     id = cursor.lastrowid
+    print(id)
     db.close()
 
 if __name__ == '__main__':
@@ -91,7 +105,6 @@ if __name__ == '__main__':
 
     sequences = read_fasta(args.fasta)
     orf_sequences = {}
-    output_sequences = {}
 
     for sequence_id, sequence in sequences.items():
         orf_sequences[sequence_id] = []
@@ -104,20 +117,16 @@ if __name__ == '__main__':
         orf_sequences[sequence_id] += find_orfs(revers_sequence[1:])
         orf_sequences[sequence_id] += find_orfs(revers_sequence[2:])
 
+    output_sequences = {}
+    output_sequences = write_fasta_format(orf_sequences)
 
     if args.output:
         path = f"{args.output}/{args.fasta.name}_orfs"
         with open(path, 'w') as f:
-            for sequence_id, sequence in orf_sequences.items():
-                counter = 0
-                for seq in sequence:
-                    f.write(f">{sequence_id}_{counter}\n{seq}\n")
-                    counter += 1
+            for sequence_id, sequence in output_sequences.items():
+                f.write(f"{sequence_id}\n{sequence}\n")
             f.close()
     else:
         # print sequences on commmand line
-        for sequence_id, sequences in orf_sequences.items():
-            counter = 0
-            for sequence in sequences:
-                print(f">{sequence_id}_{counter}\n{sequence}\n")
-                counter += 1
+        for sequence_id, sequence in output_sequences.items():
+           print(f"{sequence_id}\n{sequence}\n")
