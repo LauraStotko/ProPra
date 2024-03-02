@@ -99,6 +99,7 @@ def print_sscc_table(contacts):
 
     print("\n".join(output))
 
+
 def create_distance_matrix(atoms):
     size = len(atoms)
     distance_matrix = np.zeros((size, size))
@@ -110,6 +111,7 @@ def create_distance_matrix(atoms):
             distance_matrix[j][i] = distance
 
     return distance_matrix
+
 
 
 def plot_heatmap(distance_matrix, file_path=None, title="Protein Abstands-Heatmap"):
