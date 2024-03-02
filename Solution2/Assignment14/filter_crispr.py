@@ -3,15 +3,24 @@
 import argparse
 import re
 
+
 def read_sam_file(sam_file):
-    sequences = []
+    # Liest eine SAM-Datei und extrahiert Sequenzen mit gültigem Alignment.
+    """
+    Argumente:
+        sam_file (str): Pfad zur SAM-Datei.
+
+    Rückgabe:
+        sequences (list): Liste von Tupeln, jedes Tupel enthält die Read-ID und die Sequenz.
+    """
+    sequences = []  # Initialisiere die Liste für die gesammelten Sequenzen.
     with open(sam_file, 'r') as file:
         for line in file:
-            if not line.startswith('@'):
-                parts = line.split('\t')
-                cigar_string = parts[5]
-                if '*' not in cigar_string:
-                    sequences.append((parts[0], parts[9]))
+            if not line.startswith('@'):  # Ignoriere Header-Zeilen.
+                parts = line.split('\t')  # Teile die Zeile in ihre Komponenten.
+                cigar_string = parts[5]  # Die CIGAR-Zeichenkette befindet sich in der 6. Spalte.
+                if '*' not in cigar_string:  # Filtere Sequenzen ohne gültiges Alignment aus.
+                    sequences.append((parts[0], parts[9]))  # Füge die Read-ID und die Sequenz zur Liste hinzu.
     return sequences
 
 def find_crispr_sequences(sequences, crispr_regex=r"(?=(.{20}[ACGT]GG))"):
