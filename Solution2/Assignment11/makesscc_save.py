@@ -89,13 +89,13 @@ def calculate_contacts(atoms, distance_threshold, length_threshold):
     return contacts
 
 
-def print_sscc_table(contacts):
-    # Print the .sscc table.
-    output = ["chain\tpos\tserial\taa\tss\tglobal\tlocal"]
-    for contact in contacts:
-        output.append(f"{contact[0]}\t{contact[1]}\t{contact[2]}\t{contact[3]}\t{contact[4]}\t{contact[5]}\t{contact[6]}")
+def save_sscc_table_to_file(contacts, file_path):
+    with open(file_path, 'w') as file:
+        output = ["chain\tpos\tserial\taa\tss\tglobal\tlocal"]
+        for contact in contacts:
+            output.append(f"{contact[0]}\t{contact[1]}\t{contact[2]}\t{contact[3]}\t{contact[4]}\t{contact[5]}\t{contact[6]}")
+        file.write("\n".join(output))
 
-    print("\n".join(output))
 
 
 def main():
@@ -104,17 +104,15 @@ def main():
     parser.add_argument('--distance', type=float, required=True, help="Kontaktdistanz")
     parser.add_argument('--type', type=str, required=True, help="Atomtyp")
     parser.add_argument('--length', type=int, required=True, help="Sequenzdistanz für lokale Kontakte")
+    parser.add_argument('--output', type=str, required=True, help="Pfad zur Ausgabedatei (*.sscc)")
 
     args = parser.parse_args()
 
-    # Lese PDB-Daten einmalig ein
     pdb_data = download_pdb(args.id)
-
-    # Verarbeite die PDB-Daten
     ss_info = parse_secondary_structure(pdb_data)
     atoms = parse_pdb(pdb_data, args.type, ss_info)
     contacts = calculate_contacts(atoms, args.distance, args.length)
-    print_sscc_table(contacts)
+    save_sscc_table_to_file(contacts, args.output)  # Speichern der SSCC-Daten in einer Datei
 
 if __name__ == "__main__":
     main()
