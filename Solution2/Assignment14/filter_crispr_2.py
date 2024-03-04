@@ -1,57 +1,71 @@
 #!/usr/bin/env python3
 
-from argparse import ArgumentParser
+import argparse
 
-def read_sam_file(sam_file):
-    # Liest eine SAM-Datei und extrahiert Sequenzen mit gültigem Alignment.
-    sequences = []  # Initialisiere die Liste für die gesammelten Sequenzen.
-    with open(sam_file, 'r') as file:
-        for line in file:
-            if not line.startswith('@'):  # Ignoriere Header-Zeilen.
-                parts = line.split('\t')  # Teile die Zeile in ihre Komponenten.
-                cigar_string = parts[5]  # Die CIGAR-Zeichenkette befindet sich in der 6. Spalte.
-                if '*' not in cigar_string:  # Filtere Sequenzen ohne gültiges Alignment aus.
-                    sequences.append((parts[0], parts[9]))  # Füge die Read-ID und die Sequenz zur Liste hinzu.
+
+def read_sam_file(sam_file): # SAM-Datei einlesen
+    sequences = []
+    for line in sam_file:  # Direktes Lesen aus dem übergebenen Dateistream
+        if not line.startswith('@'):  # Ignore header lines.
+            parts = line.strip().split('\t')
+            if '*' == parts[2]:  # Filter sequences without valid alignment.
+                sequences.append(parts)
     return sequences
 
-def filter_sequences(sequences, with_mismatch=False):
-    filtered_seqs = []
-    for seq in sequences: # Iteriere über alle Sequenzen
-        tags = {tag.split(':')[0]: tag.split(':')[-1] for tag in seq[11:]} # Extrahiere die Tags und speichere sie in einem Dictionary
-        if with_mismatch:
-            if 'NM' in tags and int(tags['NM']) > 0: # Überprüfe, ob die Sequenz Mismatches enthält
-                filtered_seqs.append(seq)
+
+def get_off_and_mismatches(sam_file):  # Filter sequences with mismatches in GG suffix.
+    no_off_targets = []
+    mismatch_sequences=[]
+    for line in sam_file:
+        if line.startswith('@'):  # Ignore header lines.
+            continue
+        parts = line.split('\t')
+        if '*' == parts[2]:
+            no_off_targets.append(parts)
         else:
-            if 'NM' not in tags or int(tags['NM']) == 0: # Überprüfe, ob die Sequenz keine Mismatches enthält
-                filtered_seqs.append(seq)
-    return filtered_seqs
+            md_tag = get_md_tag(line)
+            if md_tag and check_for_mismatch_in_md_tag(md_tag):
+                mismatch_sequences.append(line.split("\t"))
+    return no_off_targets,mismatch_sequences
 
 
 def write_fasta(sequences, output_file):
     with open(output_file, 'w') as file:
         for seq in sequences:
-            header = f">{seq[0]}"  # Use QNAME as header
-            sequence = seq[9]  # SEQ field
+            header = f">{seq[0]}"  # Extract header from SAM file.
+            sequence = seq[9]  # Extract sequence from SAM file.
             file.write(f"{header}\n{sequence}\n")
 
 
+def check_for_mismatch_in_md_tag(md_tag):
+    # MD Tag Format: MD:Z:4C0A  -> 4C0A sind die Mismatches
+    number = ""
+    for char in md_tag[::-1]: # umdrehen der Liste und durchlaufen
+        if not char.isdigit(): # führt zu einem Abbruch, wenn das Zeichen kein numerisches Zeichen ist
+            break
+        else:
+            number = char + number
+    return int(number) < 2
+
+def get_md_tag(sam_line): # MD Tag aus SAM Zeile extrahieren
+    for field in sam_line.split("\t"):
+        if "MD" in field:
+            return field
+
+
 def main():
-    parser = ArgumentParser(description="Filter SAM file and output FASTA file.")
-    parser.add_argument("--sam", type=str, required=True, help="Input SAM file.")
-    parser.add_argument("--no-off-targets", type=str, help="Output FASTA file for sequences without off-targets.")
-    parser.add_argument("--with-mismatch", type=str, help="Output FASTA file for sequences with mismatches.")
-    return parser.parse_args()
+    parser = argparse.ArgumentParser(description="Filter SAM file and output FASTA file based on specific criteria.")
+    parser.add_argument("--sam", type=argparse.FileType('r'), required=True, help="Input SAM file.")
+    parser.add_argument("--no-off-targets", type=str, required=True,
+                        help="Output FASTA file for sequences with valid alignments.")
+    parser.add_argument("--with-mismatch", type=str, required=True,
+                        help="Output FASTA file for sequences with mismatches in GG suffix.")
+    args = parser.parse_args()
 
-    args = parse_arguments()
+    sequences,mismatch_seqs= get_off_and_mismatches(args.sam)
+    write_fasta(sequences, args.no_off_targets)  # Erste FASTA-Datei nach gültiger Ausrichtung
+    write_fasta(mismatch_seqs, args.with_mismatch)  # Zweite FASTA-Datei nach Mismatch-Filterung
 
-    # Read and filter sequences
-    sequences = list(read_sam_file(args.sam))
-    if args.no_off_targets:
-        filtered_seqs = filter_sequences(sequences, with_mismatch=False)
-        write_fasta(filtered_seqs, args.no_off_targets)
-    if args.with_mismatch:
-        filtered_seqs = filter_sequences(sequences, with_mismatch=True)
-        write_fasta(filtered_seqs, args.with_mismatch)
 
 if __name__ == "__main__":
     main()

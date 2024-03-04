@@ -2,13 +2,13 @@
 
 import argparse
 import math
-import requests
+import requests # modul für http requests
 
 
 def download_pdb(pdb_id):
     url = f"https://files.rcsb.org/download/{pdb_id}.pdb"
-    response = requests.get(url)
-    if response.status_code == 200:
+    response = requests.get(url) # Führe den HTTP-Request aus
+    if response.status_code == 200: # 200 ist der Code für eine erfolgreiche Anfrage
         return response.text
     else:
         raise Exception(f"Failed to download PDB file for ID {pdb_id}")
@@ -21,9 +21,9 @@ aa_dict = {
     "TYR": "Y", "VAL": "V"
 }
 
-def parse_secondary_structure(pdb_data):
-    ss_info = {}
-    for line in pdb_data.splitlines():
+def parse_secondary_structure(pdb_data): # Analyse der Sekundärstruktur
+    ss_info = {} # Initialisiert ein leeres Dictionary
+    for line in pdb_data.splitlines(): # Iteriere über jede Zeile der PDB-Datei
         if line.startswith('HELIX'):
             chain = line[19]  # Extrahiere die Kette für die Helix
             start = int(line[21:25].strip())
@@ -38,43 +38,50 @@ def parse_secondary_structure(pdb_data):
                 ss_info[(chain, i)] = 'E'  # Speichere Sheet-Info mit Kette und Position
     return ss_info
 
-def parse_pdb(pdb_data, atom_type, ss_info):
-    atoms = []
-    model_started = False
-    for line in pdb_data.splitlines():
-        if line.strip() == '' or line.startswith('REMARK'):
+
+# Extrahiert spezifische Atomdaten aus den PDB-Daten basierend auf einem gegebenen Atomtyp.
+def parse_pdb(pdb_data, atom_type, ss_info): # ss_info ist das Dictionary aus parse_secondary_structure
+    atoms = [] # Initialisiere eine leere Liste
+    model_started = False # Initialisiere eine Variable, um zu überprüfen, ob das Modell begonnen hat
+    for line in pdb_data.splitlines(): # splitlines() teilt die Zeichenkette in Zeilen auf
+        if line.strip() == '' or line.startswith('REMARK'): # strip() entfernt Leerzeichen am Anfang und Ende der Zeichenkette
             continue
         if line.startswith('MODEL') and not model_started:
-            model_started = True
+            model_started = True # parsing der Atome beginnt
             continue
-        if line.startswith('ENDMDL'):
+        if line.startswith('ENDMDL'): # Wenn das Ende des Modells erreicht ist,
             break
-        if line.startswith('ATOM') and line[12:16].strip() == atom_type:
-            chain = line[21]
-            pos = int(line[22:26].strip())
-            serial = int(line[6:11].strip())
+        # extrahiert wichtige Informationen aus der Zeile
+        if line.startswith('ATOM') and line[12:16].strip() == atom_type: # 12:16 Position für Atommtyp
+            chain = line[21] # Extrahiere die Kette des Atoms
+            pos = int(line[22:26].strip()) # Positionsnummer der Aminosäure innerhalb des Atoms zum zuordnen
+            serial = int(line[6:11].strip()) # eindeutige Seriennummer des Atoms
             aa = aa_dict.get(line[17:20].strip().upper(), 'X')  # Benutze das Dictionary
             x = float(line[30:38].strip())
             y = float(line[38:46].strip())
             z = float(line[46:54].strip())
-            ss = ss_info.get((chain, pos), 'C')  # Verwende Tupel aus Kette und Position als Schlüssel
-            atoms.append((chain, pos, serial, aa, x, y, z, ss))
+            ss = ss_info.get((chain, pos), 'C')  # nimmt info pber H und S aus ss-info, wenn kein Schlüssel C als default
+            atoms.append((chain, pos, serial, aa, x, y, z, ss)) # fügt der Atoms liste ein tupel mit informationen hinzu
     return atoms
 
 
 
-def calculate_distance(atom1, atom2):
+def calculate_distance(atom1, atom2): # Distanz berechnen zum berechnen von Kontakten
     # Calculate the Euclidean distance between two atoms.
+    # summiert die quadrierten Differenzen der x-, y- und z-Koordinaten
     return math.sqrt((atom1[4] - atom2[4])**2 + (atom1[5] - atom2[5])**2 + (atom1[6] - atom2[6])**2)
+    # (atom1[4] - atom2[4])**2: Berechnet das Quadrat der Differenz zwischen den x-Koordinaten der beiden Atome.
+    # (atom1[5] - atom2[5])**2: -"- y-Koordinaten
+
 
 
 def calculate_contacts(atoms, distance_threshold, length_threshold):
-    contacts = []
-    for i, atom1 in enumerate(atoms):
+    contacts = [] # Liste
+    for i, atom1 in enumerate(atoms): # Loop über atoms, i Index, atom1 Atom an der aktuellen Position
         global_contacts = 0
         local_contacts = 0
-        for j, atom2 in enumerate(atoms):
-            if i != j:
+        for j, atom2 in enumerate(atoms): # zweite Schleife um atom1 mit atom2 zu vergleichen
+            if i != j: # Teste dass atom1 und atom2 nicht das selbe Atom sind
                 # Überprüfe, ob die Atome zur selben Kette gehören
                 same_chain = atom1[0] == atom2[0]
 
@@ -114,7 +121,7 @@ def main():
     ss_info = parse_secondary_structure(pdb_data)
     atoms = parse_pdb(pdb_data, args.type, ss_info)
     contacts = calculate_contacts(atoms, args.distance, args.length)
-    print_sscc_table(contacts)
+    print_sscc_table(contacts) # sscc: secondary structure contact count
 
 if __name__ == "__main__":
     main()

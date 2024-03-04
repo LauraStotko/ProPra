@@ -102,9 +102,9 @@ def print_sscc_table(contacts):
 
 def create_distance_matrix(atoms):
     size = len(atoms)
-    distance_matrix = np.zeros((size, size))
+    distance_matrix = np.zeros((size, size)) # Erzeugt eine leere Matrix mit der Größe size x size
 
-    for i in range(size):
+    for i in range(size): # Loop über die Atome
         for j in range(i + 1, size):
             distance = calculate_distance(atoms[i], atoms[j])
             distance_matrix[i][j] = distance
@@ -117,7 +117,9 @@ def create_distance_matrix(atoms):
 def plot_heatmap(distance_matrix, file_path=None, title="Protein Abstands-Heatmap"):
     plt.figure(figsize=(10, 8))
     plt.title(title)
-    plt.imshow(distance_matrix, cmap='viridis', interpolation='nearest')
+    plt.imshow(distance_matrix, cmap='viridis', interpolation='nearest') # Erzeugt die Heatmap von distance_matrix
+    # cmap = 'viridis' gibt die Farbpalette an, interpolation='nearest' sorgt für eine glatte Darstellung
+    # interpolation = 'nearest' sorgt für eine glatte Darstellung
     plt.colorbar(label='Abstand')
     plt.xlabel('Atom Index')
     plt.ylabel('Atom Index')

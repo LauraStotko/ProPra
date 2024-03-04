@@ -6,13 +6,6 @@ import re
 
 def read_sam_file(sam_file):
     # Liest eine SAM-Datei und extrahiert Sequenzen mit gültigem Alignment.
-    """
-    Argumente:
-        sam_file (str): Pfad zur SAM-Datei.
-
-    Rückgabe:
-        sequences (list): Liste von Tupeln, jedes Tupel enthält die Read-ID und die Sequenz.
-    """
     sequences = []  # Initialisiere die Liste für die gesammelten Sequenzen.
     with open(sam_file, 'r') as file:
         for line in file:

@@ -105,10 +105,10 @@ def create_contact_matrix(atoms, distance_threshold, length_threshold):
     if len(atoms) == 0:
         return np.array([], dtype=int).reshape(0, 0)  # Leere 2D-Matrix für den Fall, dass keine Atome vorhanden sind
 
-    size = len(atoms)
-    matrix = np.zeros((size, size), dtype=int)
+    size = len(atoms) # size = Anzahl der Atome
+    matrix = np.zeros((size, size), dtype=int) # numpy array mit 0en, size x size
 
-    for i in range(size):
+    for i in range(size): # range von 0 bis size
         for j in range(i + 1, size):
             distance = calculate_distance(atoms[i], atoms[j])
             # Überprüfe die Distanz und, ob es sich nicht um denselben Atom handelt
