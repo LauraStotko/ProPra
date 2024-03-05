@@ -46,12 +46,13 @@ public class Executor {
 
             String pairsPath = cmd.getOptionValue("pairs");
             String seqlibPath = cmd.getOptionValue("seqlib");
+            System.out.println(seqlibPath);
             InputProcessor ip = new InputProcessor(pairsPath, seqlibPath);
 
             Map<String, String> sequences = ip.getSequences();
-            List<PdbPair> alignments = ip.getAlignments();
-            //System.out.println(sequences);
-            System.out.println(alignments.size());
+            //List<PdbPair> alignments = ip.getAlignments();
+            System.out.println(sequences);
+            //System.out.println(alignments);
 
 
         } catch (ParseException e) {

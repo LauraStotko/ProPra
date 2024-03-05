@@ -11,7 +11,7 @@ import java.util.Map;
 public class InputProcessor {
     String pairsFilePath;
     String seqLibFilePath;
-    Map<String, String> sequences;
+    private Map<String, String> sequences;
     private List<PdbPair> alignments;
 
 
@@ -23,12 +23,12 @@ public class InputProcessor {
     }
 
     public Map<String, String> getSequences() {
-        parsePairsFile();
+        parseSeqLibFile();
         return sequences;
     }
 
     public List<PdbPair> getAlignments() {
-        parseSeqLibFile();
+        parsePairsFile();
         return alignments;
     }
 
