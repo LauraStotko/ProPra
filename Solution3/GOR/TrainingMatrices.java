@@ -8,12 +8,17 @@ public class TrainingMatrices {
     private int [][] E;
     private int [][] C;
     private int [][] H;
+
+    int windowSize = 17;
+    int totalAA = 20;
+
     public TrainingMatrices(){
         this.mapping = new HashMap<>();
         aaMapping();
-        this.E = new int[20][17];
-        this.H = new int[20][17];
-        this.C = new int[20][17];
+        this.E = new int[totalAA][windowSize];
+        this.H = new int[totalAA][windowSize];
+        this.C = new int[totalAA][windowSize];
+
     }
 
     private void aaMapping(){
@@ -39,7 +44,7 @@ public class TrainingMatrices {
         this.mapping.put('V', 19);
     }
 
-    public void updateMatrx(char structure, char aa, int position){
+    public void updateMatrix(char structure, char aa, int position){
         // index is where the aa is
         int index = this.mapping.get(aa);
         if (structure == 'E'){
@@ -48,6 +53,16 @@ public class TrainingMatrices {
             this.H[index][position] += 1;
         } else {
             this.C[index][position] += 1;
+        }
+    }
+
+    public int[][] getMatrix(char structure){
+        if (structure == 'E'){
+            return this.E;
+        } else if (structure == 'H'){
+            return this.H;
+        } else {
+            return this.C;
         }
     }
 
