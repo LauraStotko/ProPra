@@ -50,8 +50,10 @@ public class Executor {
             InputProcessor ip = new InputProcessor(pairsPath, seqlibPath);
 
             Map<String, String> sequences = ip.getSequences();
-            //List<PdbPair> alignments = ip.getAlignments();
-            System.out.println(sequences);
+            List<PdbPair> alignments = ip.getAlignments();
+            Recursive recursive = new Recursive(3, -2, gapOpenValue, sequences, alignments);
+            recursive.calculateAlignment();
+            //System.out.println(sequences);
             //System.out.println(alignments);
 
 

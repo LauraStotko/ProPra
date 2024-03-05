@@ -4,28 +4,56 @@ import java.util.List;
 import java.util.Map;
 
 public class Recursive {
+    int match;
+    int mismatch;
+    int gapPenalty;
 
     Map<String, String> sequences;
-    private List<PdbPair> alignments;
+    List<PdbPair> alignments;
 
-    public void checkSequencesForAlignments() {
+    public Recursive(int match, int mismatch, int gapOpenValue, Map<String, String> sequences, List<PdbPair> alignments) {
+        this.match = match;
+        this.mismatch = mismatch;
+        this.gapPenalty = gapOpenValue;
+        this.alignments = alignments;
+        this.sequences = sequences;
+    }
+
+    public void calculateAlignment() {
         for (PdbPair pair : alignments) {
-            String sequence1 = sequences.get(pair.getPdbId1());
-            String sequence2 = sequences.get(pair.getPdbId2());
+            String seq1 = sequences.get(pair.getPdbId1());
+            String seq2 = sequences.get(pair.getPdbId2());
 
-            // Check if either sequence is null or empty
-            if (sequence1 == null || sequence1.isEmpty() || sequence2 == null || sequence2.isEmpty()) {
-                System.out.println("One or both sequences for alignment pair " + pair.getPdbId1() + " and " + pair.getPdbId2() + " are missing or empty.");
+            if (seq1 != null && !seq1.isEmpty() && seq2 != null && !seq2.isEmpty()) {
+                int score = calculateAlignmentScore(seq1, seq2, seq1.length(), seq2.length());
+
+                System.out.println("For PDB IDs " + pair.getPdbId1() + " and "
+                        + pair.getPdbId2() + ", the alignment score is: " + score);
             } else {
-                // Sequences are present for both PDB IDs
-                System.out.println("Sequences found for both " + pair.getPdbId1() + " and " + pair.getPdbId2());
+                System.out.println("One or both sequences for PDB IDs " + pair.getPdbId1()
+                        + " and " + pair.getPdbId2() + " are missing or empty.");
             }
         }
     }
 
 
-//    public alignSeqs(){
-//        if (alignments)
-//    }
+    private int calculateAlignmentScore(String seq1, String seq2, int i, int j) {
+        // Base cases (Termination Condition)
+        if (i == 0) return j * gapPenalty; // Penalize remaining length of seq2
+        if (j == 0) return i * gapPenalty; // Penalize remaining length of seq1
 
+        // RECURSIVE CASES
+        // Determine if the current characters match or mismatch
+        int matchOrMismatchCost = (seq1.charAt(i - 1) == seq2.charAt(j - 1)) ? match : mismatch;
+        // Calculate cost for matching or mismatching the last characters
+        int costSubstitute = calculateAlignmentScore(seq1, seq2, i - 1, j - 1) + matchOrMismatchCost;
+        // Calculate cost for deleting a character from seq1 (adding a gap in seq2)
+        int costDelete = calculateAlignmentScore(seq1, seq2, i - 1, j) + gapPenalty;
+        // Calculate cost for inserting a character into seq1 (adding a gap in seq1)
+        int costInsert = calculateAlignmentScore(seq1, seq2, i, j - 1) + gapPenalty;
+
+        // Return the maximum cost among delete, insert, and substitute
+        return Math.max(Math.max(costDelete, costInsert), costSubstitute);
+    }
 }
+
