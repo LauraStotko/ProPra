@@ -1,6 +1,9 @@
 package Solution3.ALIGNMENT;
 import org.apache.commons.cli.*;
 
+import java.util.List;
+import java.util.Map;
+
 public class Executor {
 
     private static boolean validateMode(String mode) {
@@ -21,39 +24,34 @@ public class Executor {
 
             // Check if the 'go' option is provided; if not, use a default value
             int gapOpenValue = cmd.hasOption("go") ? Integer.parseInt(cmd.getOptionValue("go")) : -12;
-            System.out.println("Gap Open Penalty: " + gapOpenValue);
 
             // Check if the 'ge' option is provided; if not, use a default value
             int gapExtendValue = cmd.hasOption("ge") ? Integer.parseInt(cmd.getOptionValue("ge")) : -1;
-            System.out.println("Gap Extend Penalty: " + gapExtendValue);
 
             // Makes sure that user enters only valid mode argument
-            String mode = cmd.getOptionValue("mode");
+            //String mode = cmd.getOptionValue("mode");
             if (!validateMode(cmd.getOptionValue("mode"))) {
                 throw new ParseException("Invalid mode selected. Please choose one of: local, global, freeshift.");
             }
-            System.out.println("Alignment Mode: " + mode);
 
             // Makes sure that user enters only valid format argument
-            String format = cmd.getOptionValue("format");
+            //String format = cmd.getOptionValue("format");
             if (!validateFormat(cmd.getOptionValue("format"))) {
                 throw new ParseException("Invalid format selected. Please choose one of: scores, ali, html.");
             }
-            System.out.println("Format Mode: " + format);
 
-            // Check and print the status of optional flags 'check' and 'nw'
-            boolean isCheckEnabled = cmd.hasOption("check");
-            System.out.println("Check Flag Enabled: " + isCheckEnabled);
 
-            boolean isNWEnabled = cmd.hasOption("nw");
-            System.out.println("NW/SW Algorithm Enabled: " + isNWEnabled);
+            // boolean isCheckEnabled = cmd.hasOption("check");
+            // boolean isNWEnabled = cmd.hasOption("nw");
 
-            // Example usage of 'pairs', 'seqlib', and 'm' options
-            System.out.println("Pairs File Path: " + cmd.getOptionValue("pairs"));
-            System.out.println("Sequence Library File Path: " + cmd.getOptionValue("seqlib"));
-            System.out.println("Substitution Matrix File Path: " + cmd.getOptionValue("m"));
-            System.out.println("DP Matrix Directory Path: " + cmd.getOptionValue("dpmatrices"));
+            String pairsPath = cmd.getOptionValue("pairs");
+            String seqlibPath = cmd.getOptionValue("seqlib");
+            InputProcessor ip = new InputProcessor(pairsPath, seqlibPath);
 
+            Map<String, String> sequences = ip.getSequences();
+            List<PdbPair> alignments = ip.getAlignments();
+            //System.out.println(sequences);
+            System.out.println(alignments.size());
 
 
         } catch (ParseException e) {
