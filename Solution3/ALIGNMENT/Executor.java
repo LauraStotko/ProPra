@@ -1,4 +1,5 @@
 package Solution3.ALIGNMENT;
+import org.apache.commons.cli.*;
 
 public class Executor {
 
@@ -7,7 +8,7 @@ public class Executor {
     }
 
     public Options defineOptions(){
-
+        return null;
     }
 
     public void executeAlignemnt(){
