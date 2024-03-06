@@ -55,15 +55,39 @@ public class Executor {
             List<PdbSequence> sequences = ip.getSequences();
             List<PdbPair> alignments = ip.getAlignments();
 
-            NeedlemanWusch nw = new NeedlemanWusch(substitutionMatrixPath, gapOpenValue);
-            nw.printMatrix();
-            AlignmentResult alignmentResult = nw.backtrack();
-            String dpmatricesPath = cmd.getOptionValue("dpmatrices");
-            OutputHandler outputHandlerScores = new OutputHandler(alignmentResult, "scores");
-            outputHandlerScores.handleOutput();
+            String format = cmd.getOptionValue("format");
 
-            OutputHandler outputHandlerAli = new OutputHandler(alignmentResult, "ali");
-            outputHandlerAli.handleOutput();
+            String pdbId1;
+            String pdbId2;
+
+            String sequence1;
+            String sequence2;
+
+            AlignmentResult alignmentResult;
+            OutputHandler outputHandlerScores;
+
+
+
+            for (PdbPair alignment : alignments) {
+
+                pdbId1 = alignment.getPdbId1();
+                pdbId2 = alignment.getPdbId2();
+
+                // Find corresponding sequences for pdbId1 and pdbId2
+                sequence1 = findSequenceById(pdbId1, sequences);
+                sequence2 = findSequenceById(pdbId2, sequences);
+
+                // Check if sequences are not null before creating NeedlemanWusch instance
+                if (sequence1 != null && sequence2 != null) {
+                    NeedlemanWusch nw = new NeedlemanWusch(pdbId1, pdbId2, sequence1, sequence2, substitutionMatrixPath, gapOpenValue);
+                    alignmentResult = nw.backtrack();
+
+                    if(validateFormat(format)){
+                        outputHandlerScores = new OutputHandler(alignmentResult, format);
+                        outputHandlerScores.handleOutput();
+                    }
+                }
+            }
 
 
         } catch (ParseException e) {
@@ -132,6 +156,16 @@ public class Executor {
 
         return options;
     }
+
+    private static String findSequenceById(String pdbId, List<PdbSequence> sequences) {
+        for (PdbSequence sequence : sequences) {
+            if (sequence.getPdbId().equals(pdbId)) {
+                return sequence.getPdbSequence();
+            }
+        }
+        return null; // Return null if no matching sequence is found
+    }
+
 
     public void executeAlignment(){
 

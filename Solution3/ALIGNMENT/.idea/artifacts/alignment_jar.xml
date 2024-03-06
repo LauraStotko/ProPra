@@ -1,0 +1,17 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="alignment:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/alignment_jar</output-path>
+    <root id="archive" name="alignment.jar">
+      <element id="module-output" name="ALIGNMENT" />
+      <element id="extracted-dir" path="$USER_HOME$/Downloads/commons-cli-1.6.0/commons-cli-1.6.0.jar" path-in-jar="/" />
+      <element id="file-copy" path="$PROJECT_DIR$/AlignmentResult.java" />
+      <element id="file-copy" path="$PROJECT_DIR$/Executor.java" />
+      <element id="file-copy" path="$PROJECT_DIR$/InputProcessor.java" />
+      <element id="file-copy" path="$PROJECT_DIR$/NeedlemanWusch.java" />
+      <element id="file-copy" path="$PROJECT_DIR$/OutputHandler.java" />
+      <element id="file-copy" path="$PROJECT_DIR$/PdbPair.java" />
+      <element id="file-copy" path="$PROJECT_DIR$/PdbSequence.java" />
+      <element id="file-copy" path="$PROJECT_DIR$/SubstitutionMatrix.java" />
+    </root>
+  </artifact>
+</component>

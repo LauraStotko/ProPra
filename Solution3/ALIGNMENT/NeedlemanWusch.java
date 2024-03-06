@@ -14,16 +14,17 @@ public class NeedlemanWusch {
     int gapPenalty;
     SubstitutionMatrix substitutionMatrix;
 
-    public NeedlemanWusch(String substitutionMatrixPath, int gapPenalty){
+    public NeedlemanWusch(String pdbId1, String pdbId2, String seq1, String seq2, String substitutionMatrixPath, int gapPenalty){
 
-        this.pdbId1 = "ID1";
-        this.pdbId2 = "ID2";
+        this.pdbId1 = pdbId1;
+        this.pdbId2 = pdbId2;
 
-        this.seq2 = "TATAAT";
-        this.seq1 = "TTACGTAAGC";
+        this.seq1 = seq1;
+        this.seq2 = seq2;
+
+        this.gapPenalty = gapPenalty;
 
         this.substitutionMatrix = new SubstitutionMatrix(substitutionMatrixPath);
-        this.gapPenalty = gapPenalty;
         this.scoringMatrix = new double[seq1.length() + 1][seq2.length() + 1];
 
         initializeMatrix();
@@ -83,8 +84,8 @@ public class NeedlemanWusch {
         }
 
         // Print the final alignment
-        System.out.println("Alignment Seq1: " + alignmentSeq1);
-        System.out.println("Alignment Seq2: " + alignmentSeq2);
+//        System.out.println("Alignment Seq1: " + alignmentSeq1);
+//        System.out.println("Alignment Seq2: " + alignmentSeq2);
 
         double alignmentScore = scoringMatrix[seq1.length()][seq2.length()];
 
