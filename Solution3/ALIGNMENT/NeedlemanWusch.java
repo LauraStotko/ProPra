@@ -1,23 +1,33 @@
 package Solution3.ALIGNMENT;
 
-import java.util.List;
-import java.util.Map;
+public class NeedlemanWusch {
 
-public class NeedlemanWusch extends SequenceAlignment {
-    int [][] scoringMatrix;
-    Map<String, String> sequences;
-    private List<PdbPair> alignments;
-    String seq2 = "TATAAT";
-    String seq1 = "TTACGTAAGC";
+    double [][] scoringMatrix;
 
-    int gapPenalty = -4;
+    String pdbId1;
+    String pdbId2;
 
-    int match = 3;
-    int mismatch = -2;
+    String seq2;
+    String seq1;
 
-    public NeedlemanWusch(){
-        this.scoringMatrix = new int[seq1.length() + 1][seq2.length() + 1];
+
+    int gapPenalty;
+    SubstitutionMatrix substitutionMatrix;
+
+    public NeedlemanWusch(String substitutionMatrixPath, int gapPenalty){
+
+        this.pdbId1 = "ID1";
+        this.pdbId2 = "ID2";
+
+        this.seq2 = "TATAAT";
+        this.seq1 = "TTACGTAAGC";
+
+        this.substitutionMatrix = new SubstitutionMatrix(substitutionMatrixPath);
+        this.gapPenalty = gapPenalty;
+        this.scoringMatrix = new double[seq1.length() + 1][seq2.length() + 1];
+
         initializeMatrix();
+        fillMatrix();
     }
 
     public void initializeMatrix(){
@@ -34,16 +44,16 @@ public class NeedlemanWusch extends SequenceAlignment {
     public void fillMatrix() {
         for (int i = 1; i <= seq1.length(); i++) {
             for (int j = 1; j <= seq2.length(); j++) {
-                int matchOrMismatchCost = (seq1.charAt(i - 1) == seq2.charAt(j - 1)) ? match : mismatch;
-                int costSubstitute = scoringMatrix[i - 1][j - 1] + matchOrMismatchCost;
-                int costDelete = scoringMatrix[i - 1][j] + gapPenalty;
-                int costInsert = scoringMatrix[i][j - 1] + gapPenalty;
+                double matchOrMismatchCost = getMatchOrMismatchValue(i,j);
+                double costSubstitute = scoringMatrix[i - 1][j - 1] + matchOrMismatchCost;
+                double costDelete = scoringMatrix[i - 1][j] + gapPenalty;
+                double costInsert = scoringMatrix[i][j - 1] + gapPenalty;
                 scoringMatrix[i][j] = Math.max(Math.max(costDelete, costInsert), costSubstitute);
             }
         }
     }
 
-    public void backtrack() {
+    public AlignmentResult backtrack() {
         StringBuilder alignmentSeq1 = new StringBuilder();
         StringBuilder alignmentSeq2 = new StringBuilder();
 
@@ -53,11 +63,11 @@ public class NeedlemanWusch extends SequenceAlignment {
         // Backtracking loop
         while (i > 0 || j > 0) {
             // Error Handling for index out of bounds with Integer.MIN_VALUE
-            int currentScore = i > 0 && j > 0 ? scoringMatrix[i][j] : Integer.MIN_VALUE;
-            int scoreDiagonal = i > 0 && j > 0 ? scoringMatrix[i - 1][j - 1] : Integer.MIN_VALUE;
-            int scoreUp = i > 0 ? scoringMatrix[i - 1][j] : Integer.MIN_VALUE;
-            int scoreLeft = j > 0 ? scoringMatrix[i][j - 1] : Integer.MIN_VALUE;
-            int matchOrMismatchValue = i > 0 && j > 0 ? getMatchOrMismatchValue(i, j) : Integer.MIN_VALUE;
+            double currentScore = i > 0 && j > 0 ? scoringMatrix[i][j] : Integer.MIN_VALUE;
+            double scoreDiagonal = i > 0 && j > 0 ? scoringMatrix[i - 1][j - 1] : Integer.MIN_VALUE;
+            double scoreUp = i > 0 ? scoringMatrix[i - 1][j] : Integer.MIN_VALUE;
+            double scoreLeft = j > 0 ? scoringMatrix[i][j - 1] : Integer.MIN_VALUE;
+            double matchOrMismatchValue = (i > 0 && j > 0) ? getMatchOrMismatchValue(i, j) : Integer.MIN_VALUE;
 
             // Decide the best move
             if (i > 0 && j > 0 && currentScore == scoreDiagonal + matchOrMismatchValue) {
@@ -75,34 +85,44 @@ public class NeedlemanWusch extends SequenceAlignment {
         // Print the final alignment
         System.out.println("Alignment Seq1: " + alignmentSeq1);
         System.out.println("Alignment Seq2: " + alignmentSeq2);
+
+        double alignmentScore = scoringMatrix[seq1.length()][seq2.length()];
+
+        AlignmentResult alignmentResult = new AlignmentResult(this.pdbId1, this.pdbId2, alignmentScore, alignmentSeq1.toString(), alignmentSeq2.toString());
+
+        return alignmentResult;
     }
 
-    private int getMatchOrMismatchValue(int i, int j){
-        if(seq1.charAt(i - 1) == seq2.charAt(j - 1)){
-            return match;
-        }
-        return mismatch;
+    private double getMatchOrMismatchValue(int i, int j) {
+        char a = seq1.charAt(i - 1);
+        char b = seq2.charAt(j - 1);
+        return substitutionMatrix.getScore(a, b);
     }
 
     public void printMatrix() {
         fillMatrix();
+        // Define the width for each column. Adjust the value as needed.
+        int columnWidth = 7;
+
         // Print the top row (seq2 characters)
-        System.out.print(" \t \t"); // Padding for alignment
+        System.out.print(String.format("%" + (columnWidth * 2) + "s", "")); // Padding for alignment
         for (int j = 0; j < seq2.length(); j++) {
-            System.out.print(seq2.charAt(j) + "\t");
+            System.out.print(String.format("%-" + columnWidth + "s", seq2.charAt(j)));
         }
         System.out.println(); // Newline after printing seq2 characters
 
         for (int i = 0; i <= seq1.length(); i++) {
             if (i > 0) { // Print seq1 character at the start of each row, excluding the first row
-                System.out.print(seq1.charAt(i - 1) + "\t");
+                System.out.print(String.format("%-" + columnWidth + "s", seq1.charAt(i - 1)));
             } else {
-                System.out.print(" \t"); // Padding for the first row
+                System.out.print(String.format("%-" + columnWidth + "s", " ")); // Padding for the first row
             }
             for (int j = 0; j <= seq2.length(); j++) {
-                System.out.print(scoringMatrix[i][j] + "\t"); // Print each cell's value
+                // Format the score with fixed width for alignment, adjust precision as needed
+                System.out.print(String.format("%-" + columnWidth + ".2f", scoringMatrix[i][j])); // Print each cell's value
             }
             System.out.println(); // Newline at the end of each row
         }
     }
+
 }

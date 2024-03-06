@@ -2,7 +2,6 @@ package Solution3.ALIGNMENT;
 import org.apache.commons.cli.*;
 
 import java.util.List;
-import java.util.Map;
 
 public class Executor {
 
@@ -40,6 +39,10 @@ public class Executor {
                 throw new ParseException("Invalid format selected. Please choose one of: scores, ali, html.");
             }
 
+            //Recursive recursive = new Recursive(3, -2, gapOpenValue, sequences, alignments);
+            //recursive.calculateAlignment();
+            //System.out.println(sequences);
+            //System.out.println(alignments);
 
             // boolean isCheckEnabled = cmd.hasOption("check");
             // boolean isNWEnabled = cmd.hasOption("nw");
@@ -49,16 +52,18 @@ public class Executor {
             String substitutionMatrixPath = cmd.getOptionValue("m");
             InputProcessor ip = new InputProcessor(pairsPath, seqlibPath, substitutionMatrixPath);
 
-            Map<String, String> sequences = ip.getSequences();
+            List<PdbSequence> sequences = ip.getSequences();
             List<PdbPair> alignments = ip.getAlignments();
 
-            NeedlemanWusch nw = new NeedlemanWusch();
+            NeedlemanWusch nw = new NeedlemanWusch(substitutionMatrixPath, gapOpenValue);
             nw.printMatrix();
-            nw.backtrack();
-            //Recursive recursive = new Recursive(3, -2, gapOpenValue, sequences, alignments);
-            //recursive.calculateAlignment();
-            //System.out.println(sequences);
-            //System.out.println(alignments);
+            AlignmentResult alignmentResult = nw.backtrack();
+            String dpmatricesPath = cmd.getOptionValue("dpmatrices");
+            OutputHandler outputHandlerScores = new OutputHandler(alignmentResult, "scores");
+            outputHandlerScores.handleOutput();
+
+            OutputHandler outputHandlerAli = new OutputHandler(alignmentResult, "ali");
+            outputHandlerAli.handleOutput();
 
 
         } catch (ParseException e) {

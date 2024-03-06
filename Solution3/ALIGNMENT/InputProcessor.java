@@ -4,29 +4,23 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class InputProcessor {
     String pairsFilePath;
     String seqLibFilePath;
-    String substitutionFilePath;
+    SubstitutionMatrix substitutionMatrix;
 
-    private double [][] substitutionMatrix;
-    private Map<String, String> sequences;
-    private List<PdbPair> alignments;
-
+    private List<PdbSequence> sequences = new ArrayList<>();
+    private List<PdbPair> alignments = new ArrayList<>();
 
     public InputProcessor(String pairFilePath, String seqLibFilePath, String substitutionFilePath) {
         this.pairsFilePath = pairFilePath;
         this.seqLibFilePath = seqLibFilePath;
-        this.substitutionFilePath = substitutionFilePath;
-        this.sequences = new HashMap<>();
-        this.alignments = new ArrayList<>();
+        this.substitutionMatrix = new SubstitutionMatrix(substitutionFilePath);
     }
 
-    public Map<String, String> getSequences() {
+    public List<PdbSequence> getSequences() {
         parseSeqLibFile();
         return sequences;
     }
@@ -34,10 +28,6 @@ public class InputProcessor {
     public List<PdbPair> getAlignments() {
         parsePairsFile();
         return alignments;
-    }
-
-    public double[][] getSubstitutionMatrix() {
-        return substitutionMatrix;
     }
 
     public void parsePairsFile() {
@@ -65,7 +55,7 @@ public class InputProcessor {
                 if (substr.length == 2) {
                     String id = substr[0].trim();
                     String sequence = substr[1].trim();
-                    sequences.put(id, sequence);
+                    sequences.add(new PdbSequence(id, sequence));
                 }
             }
         } catch (IOException e) {
@@ -73,7 +63,5 @@ public class InputProcessor {
         }
     }
 
-    public void parseSubstitutionMatrixFile(){
 
-    }
 }
