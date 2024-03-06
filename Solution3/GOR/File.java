@@ -1,15 +1,13 @@
-package Solution3.GOR;
+package GOR;
 
-
-import java.io.BufferedReader;
-import java.io.FileReader;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.cli.*;
-import java.io.IOException;
 
 public abstract class File {
-    private List<ProteinData> readSeqlib(String file){
+
+    public List<ProteinData> readSeqlib(String file){
         List<ProteinData> proteinDataList = new ArrayList<>();
 
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
@@ -41,11 +39,37 @@ public abstract class File {
                     // can AS or SS be part of several lines?
                 }
             }
+            proteinDataList.add(new ProteinData(id, aaBuilder.toString(), ssBuilder.toString()));
 
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
         return proteinDataList;
+    }
+
+    public static void writeMatricesToFile(String model, TrainingMatrices training_matrices){
+        char [] structures = new char[]{'C', 'E', 'H'};
+
+        try (PrintWriter writer = new PrintWriter(new FileWriter(model))) {
+            // write matrices in file
+            writer.println("// Matrix3D");
+            for (char structure: structures){
+                writer.print("\n");
+                writer.println("=" + structure + "=" + "\n");
+                int[][] matrix = training_matrices.getMatrix(structure);
+                for (int row = 0; row < matrix.length; row++){
+                    writer.print(training_matrices.getMapping2aa().get(row) + "\t");
+                    for(int col = 0; col < matrix[0].length; col++){
+
+                        writer.print(matrix[row][col] + "\t");
+                    }
+                    writer.println();
+                }
+                writer.print("\n"); // Leerzeile zwischen den Matrizen
+            }
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
+        }
     }
 
 }
