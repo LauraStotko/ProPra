@@ -46,13 +46,15 @@ public class Executor {
 
             String pairsPath = cmd.getOptionValue("pairs");
             String seqlibPath = cmd.getOptionValue("seqlib");
-            InputProcessor ip = new InputProcessor(pairsPath, seqlibPath);
+            String substitutionMatrixPath = cmd.getOptionValue("m");
+            InputProcessor ip = new InputProcessor(pairsPath, seqlibPath, substitutionMatrixPath);
 
             Map<String, String> sequences = ip.getSequences();
             List<PdbPair> alignments = ip.getAlignments();
 
             NeedlemanWusch nw = new NeedlemanWusch();
             nw.printMatrix();
+            nw.backtrack();
             //Recursive recursive = new Recursive(3, -2, gapOpenValue, sequences, alignments);
             //recursive.calculateAlignment();
             //System.out.println(sequences);

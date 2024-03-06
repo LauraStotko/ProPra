@@ -10,8 +10,7 @@ public abstract class SequenceAlignment {
     }
 
     public void fillMatrix(){};
-    public String backtrack(){
-        return "";
+    public void backtrack(){
     }
 }
 

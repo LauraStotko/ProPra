@@ -11,13 +11,17 @@ import java.util.Map;
 public class InputProcessor {
     String pairsFilePath;
     String seqLibFilePath;
+    String substitutionFilePath;
+
+    private double [][] substitutionMatrix;
     private Map<String, String> sequences;
     private List<PdbPair> alignments;
 
 
-    public InputProcessor(String pairFilePath, String seqLibFilePath) {
+    public InputProcessor(String pairFilePath, String seqLibFilePath, String substitutionFilePath) {
         this.pairsFilePath = pairFilePath;
         this.seqLibFilePath = seqLibFilePath;
+        this.substitutionFilePath = substitutionFilePath;
         this.sequences = new HashMap<>();
         this.alignments = new ArrayList<>();
     }
@@ -30,6 +34,10 @@ public class InputProcessor {
     public List<PdbPair> getAlignments() {
         parsePairsFile();
         return alignments;
+    }
+
+    public double[][] getSubstitutionMatrix() {
+        return substitutionMatrix;
     }
 
     public void parsePairsFile() {
@@ -63,5 +71,9 @@ public class InputProcessor {
         } catch (IOException e) {
             System.err.println("Error reading sequence library file: " + e.getMessage());
         }
+    }
+
+    public void parseSubstitutionMatrixFile(){
+
     }
 }

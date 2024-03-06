@@ -6,7 +6,7 @@ public class GotohLocal extends SequenceAlignment {
     }
 
     public void fillMatrix(){};
-    public String backtrack(){
-        return "";
+    public void backtrack(){
+
     }
 }

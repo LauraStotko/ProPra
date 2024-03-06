@@ -6,7 +6,6 @@ public class SmithWaterman extends SequenceAlignment {
     }
 
     public void fillMatrix(){};
-    public String backtrack(){
-        return "";
+    public void backtrack(){
     }
 }
