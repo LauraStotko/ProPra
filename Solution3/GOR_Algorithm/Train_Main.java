@@ -1,6 +1,3 @@
-
-import GOR_I.Train_GOR1;
-import GOR_III.Train_GOR3;
 import org.apache.commons.cli.*;
 
 public class Train_Main {
@@ -25,6 +22,8 @@ public class Train_Main {
             } else if (method.equals("gor3")){
                 Train_GOR3 train3 = new Train_GOR3(filename, model);
             } else if(method.equals("gor4")){
+                Train_GOR4 train4 = new Train_GOR4(filename, model);
+                Train_GOR3 train3 = new Train_GOR3(filename, model);
 
             } else if(method.equals("gor5")){
 
