@@ -2,10 +2,8 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
 
 public class Train_GOR3 {
-    //private TrainingMatricesGOR3 training_matrices;
     private HashMap<MatrixKey, TrainingMatrices> training_matrices;
     private List<ProteinData> proteinData;
     final int m = 8;
@@ -21,7 +19,7 @@ public class Train_GOR3 {
 
     private void initializeMatrices(){
         for (Character aa: GORHelper.getAllAa()){
-            training_matrices.put(new MatrixKey(null, aa), new TrainingMatrices());
+            training_matrices.put(new MatrixKey(null, aa, null), new TrainingMatrices());
         }
     }
 
@@ -37,7 +35,7 @@ public class Train_GOR3 {
                     continue;
                 }
 
-                MatrixKey key = new MatrixKey(null, aaMiddle);
+                MatrixKey key = new MatrixKey(null, aaMiddle, null);
 
                 for (int i = 0; i <= 2*m; i++) {
                     int aaIndex = index + (i - m);
@@ -56,7 +54,7 @@ public class Train_GOR3 {
 
             for (char aa : GORHelper.getAllAa()) {
 
-                MatrixKey key = new MatrixKey(null, aa);
+                MatrixKey key = new MatrixKey(null, aa, null);
 
                 TrainingMatrices trainingMatrices = this.training_matrices.get(key);
 
