@@ -1,4 +1,4 @@
-package Solution3.ALIGNMENT;
+package Solution3.alignment;
 
 import java.util.List;
 import java.util.Map;
