@@ -49,7 +49,7 @@ public class Train_GOR3 {
 
 
     public void writeMatricesToFile(String outputModelFilePath) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputModelFilePath))) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputModelFilePath, true))) {
             writer.write("// Matrix4D");
 
             for (char aa : GORHelper.getAllAa()) {
