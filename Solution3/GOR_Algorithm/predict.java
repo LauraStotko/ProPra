@@ -1,18 +1,20 @@
+import GOR.GORHelper;
+import GOR.MatrixKey;
 import GOR.ProteinData;
 import GOR.TrainingMatrices;
 import GOR_I.Predict_GOR1;
-import GOR_I.Train_GOR1;
+import GOR_III.Predict_GOR3;
 import org.apache.commons.cli.*;
 
-import javax.swing.*;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
-public class predict {
+public class Predict_Main {
 
     private static String gorType(String model){
         String method = "";
@@ -68,6 +70,49 @@ public class predict {
         return as;
     }
 
+    private static void fillMatrices(String model, HashMap<MatrixKey, TrainingMatrices> training_matrices){
+
+        try (BufferedReader br = new BufferedReader(new FileReader(model))) {
+            String line;
+            char structure = 'C';
+            char aaMain = 'A';
+            MatrixKey key = new MatrixKey(null, aaMain);
+            training_matrices.put(key, new TrainingMatrices());
+
+            while ((line = br.readLine()) != null) {
+                if(line.startsWith("//") || line.isEmpty()|| line.equals("\t")){
+                    continue;
+                }
+                if (line.startsWith("=")) {
+                    // erst aa, dann struktur
+                    if (line.charAt(1) != aaMain){
+                        aaMain = line.charAt(1);
+                        key = new MatrixKey(null, aaMain);
+                        training_matrices.put(key, new TrainingMatrices());
+                    }
+                    structure = line.charAt(3);
+
+                    continue;
+                }
+                //MatrixKey key = new MatrixKey(null, aaMain);
+                // Teile enthalten Spalten der Matrix
+                String[] parts = line.trim().split("\t");
+                // Der erste Index der Zeile ist aa
+                char currentAA = line.charAt(0);
+                if (!GORHelper.containsAA(currentAA)) continue; // Sicherstellen, dass aa gültig ist
+                int row = GORHelper.getRowByAa(currentAA);
+
+                for (int i = 0; i < parts.length - 1; i++) { // Erster Eintrag (Aminosäure-Code)
+                    // Die Zeile befüllen
+                    training_matrices.get(key).getMatrix(structure)[row][i] = Integer.parseInt(parts[i + 1]);
+                }
+            }
+
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
     private static void scale(){
 
     }
@@ -99,6 +144,7 @@ public class predict {
 
             List<ProteinData> as = readFasta(seq);
 
+
             if (maf != null) {
                 //predict GOR 5
             } else {
@@ -110,6 +156,10 @@ public class predict {
                     as = predict.getAs();
 
                 } else if(method.equals("gor3")){
+                    HashMap<MatrixKey, TrainingMatrices> training_matrices = new HashMap<>();
+                    fillMatrices(model, training_matrices);
+                    Predict_GOR3 predict = new Predict_GOR3(training_matrices, as);
+                    as = predict.getProteinData();
 
                 } else if (method.equals("gor4")){
 
@@ -117,7 +167,7 @@ public class predict {
             }
 
             if (format.equals("txt")){
-                // output auf der Kosole
+                // output auf der Konsole
                 PrintWriter writer = new PrintWriter(System.out);
                 for (int i=0; i < as.size(); i++){
                     ProteinData p = as.get(i);
