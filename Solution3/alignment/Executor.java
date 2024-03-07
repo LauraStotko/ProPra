@@ -1,4 +1,4 @@
-package Solution3.ALIGNMENT;
+package Solution3.alignment;
 import org.apache.commons.cli.*;
 
 import java.util.List;
