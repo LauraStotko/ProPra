@@ -2,6 +2,7 @@ package GOR_I;
 
 
 
+import GOR.GORHelper;
 import GOR.TrainingMatrices;
 import GOR.ProteinData;
 
@@ -41,7 +42,6 @@ public class Predict_GOR1 {
     private void startPredict(){
 
         for (int i = 0; i < this.as.size(); i++){
-            String sequence = this.as.get(i).getSequence();
             String structure = predictSS(this.as.get(i));
             this.as.get(i).setStructure(structure);
         }
@@ -57,13 +57,13 @@ public class Predict_GOR1 {
 
             if (i - m >= 0 && i + m < sequence.length()) {
                 char aa = sequence.charAt(i);
-                if (!this.training_matrices.getMapping2row().containsKey(aa)){
+                if (!GORHelper.containsAA(aa)){
                     predictedStructure.append('C');                 // default
                     continue;
                 }
                 String window = sequence.substring(i - m, i + m);
                 //0 ist H, 1 E, 2 C
-                //double [] probabilities = new double [3];
+
                 // Berechnung der Wahrscheinlichkeiten
                 double probabilityH = calculateProbability(window, 'H');
                 double probabilityE = calculateProbability(window, 'E');
@@ -82,7 +82,7 @@ public class Predict_GOR1 {
                 predictedStructure.append('-');
             }
         }
-        //p.setStructure(predictedStructure.toString());
+
         return predictedStructure.toString();
     }
 
