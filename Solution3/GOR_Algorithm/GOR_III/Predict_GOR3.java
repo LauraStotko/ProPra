@@ -29,23 +29,17 @@ public class Predict_GOR3 {
 
     }
 
-    private int getSum(){
-        int sum = 0;
-
-
-
-        return sum;
-    }
-
     public String predictSS(ProteinData p) {
         String sequence = p.getSequence();
         StringBuilder predictedStructure = new StringBuilder();
+        MatrixKey key;
 
         for (int i = 0; i < sequence.length(); i++) {
 
             if (i - m >= 0 && i + m < sequence.length()) {
                 // i ist jetzt middleaa
                 char middleAA = sequence.charAt(i);
+
                 if (!GORHelper.containsAA(middleAA)){
                     predictedStructure.append('C');                 // default
                     continue;
@@ -69,8 +63,9 @@ public class Predict_GOR3 {
                     predictedSS = 'E';
                 }
                 predictedStructure.append(predictedSS);
+            } else {
+                predictedStructure.append('-');
             }
-            predictedStructure.append('-');
         }
 
         return predictedStructure.toString();
@@ -106,7 +101,7 @@ public class Predict_GOR3 {
         }
 
 
-        return 0.0;
+        return probValue;
     }
 
     public double calculateRatio(int position, char structure, char aa, TrainingMatrices matrices){
@@ -125,9 +120,11 @@ public class Predict_GOR3 {
 
             return Math.log(numerator / denominator);
         } else {
-            return -1;
+            return 0;
         }
     }
 
-
+    public List<ProteinData> getProteinData() {
+        return proteinData;
+    }
 }
