@@ -1,4 +1,4 @@
-package Solution3.ALIGNMENT;
+package Solution3.alignment;
 
 public class PdbSequence {
     private final String pdbId;
