@@ -196,12 +196,12 @@ public class Predict_Main {
             String seq = cmd.getOptionValue("seq");
             String maf = cmd.getOptionValue("maf");
 
-            List<ProteinData> as = readFasta(seq);
 
 
             if (maf != null) {
                 //predict GOR 5
             } else {
+                List<ProteinData> as = readFasta(seq);
                 String method = gorType(model);
                 if (method.equals("gor1")){
                     TrainingMatrices trainMatrices = new TrainingMatrices();
@@ -223,24 +223,26 @@ public class Predict_Main {
                     Predict_GOR4 predict = new Predict_GOR4(trainMatrices4, as, matrices4Sum);
                     as = predict.getProteinData();
                 }
+
+                if (format.equals("txt")){
+                    // output auf der Konsole
+                    PrintWriter writer = new PrintWriter(System.out);
+                    for (int i=0; i < as.size(); i++){
+                        ProteinData p = as.get(i);
+                        writer.println("> " + p.getPdb());
+                        writer.println("AS " + p.getSequence());
+                        writer.println("PS " + p.getStructure());
+                        if (probabilities != null){
+                            // PH, PE, PC
+                        }
+                    }
+                    writer.close();
+                } else {
+                    //html output
+                }
+
             }
 
-            if (format.equals("txt")){
-                // output auf der Konsole
-                PrintWriter writer = new PrintWriter(System.out);
-                for (int i=0; i < as.size(); i++){
-                    ProteinData p = as.get(i);
-                    writer.println("> " + p.getPdb());
-                    writer.println("AS " + p.getSequence());
-                    writer.println("PS " + p.getStructure());
-                    if (probabilities != null){
-                        // PH, PE, PC
-                    }
-                }
-                writer.close();
-            } else {
-                //html output
-            }
 
         } catch (ParseException e) {
             throw new RuntimeException(e);
