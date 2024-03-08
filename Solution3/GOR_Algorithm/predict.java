@@ -4,6 +4,7 @@ import GOR.ProteinData;
 import GOR.TrainingMatrices;
 import GOR_I.Predict_GOR1;
 import GOR_III.Predict_GOR3;
+import GOR_IV.Predict_GOR4;
 import org.apache.commons.cli.*;
 
 import java.io.BufferedReader;
@@ -15,6 +16,8 @@ import java.util.HashMap;
 import java.util.List;
 
 public class Predict_Main {
+
+    private final int m = 8;
 
     private static String gorType(String model){
         String method = "";
@@ -66,20 +69,29 @@ public class Predict_Main {
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
-
         return as;
     }
 
-    private static void fillMatrices(String model, HashMap<MatrixKey, TrainingMatrices> training_matrices){
+    private static void fillMatricesGOR3(String model, HashMap<MatrixKey, TrainingMatrices> training_matrices){
 
         try (BufferedReader br = new BufferedReader(new FileReader(model))) {
             String line;
             char structure = 'C';
             char aaMain = 'A';
-            MatrixKey key = new MatrixKey(null, aaMain);
+            boolean reachedMatrix4D = false;
+            MatrixKey key = new MatrixKey(null, aaMain, null);
             training_matrices.put(key, new TrainingMatrices());
 
             while ((line = br.readLine()) != null) {
+
+                if (!reachedMatrix4D) {
+                    // Überspringen, bis // Matrix4D erreicht ist
+                    if (line.startsWith("// Matrix4D")) {
+                        reachedMatrix4D = true;
+                    }
+                    continue;
+                }
+
                 if(line.startsWith("//") || line.isEmpty()|| line.equals("\t")){
                     continue;
                 }
@@ -87,7 +99,7 @@ public class Predict_Main {
                     // erst aa, dann struktur
                     if (line.charAt(1) != aaMain){
                         aaMain = line.charAt(1);
-                        key = new MatrixKey(null, aaMain);
+                        key = new MatrixKey(null, aaMain, null);
                         training_matrices.put(key, new TrainingMatrices());
                     }
                     structure = line.charAt(3);
@@ -113,14 +125,56 @@ public class Predict_Main {
         }
     }
 
-    private static void scale(){
+    private static void fillMatricesGOR4(String model, HashMap<MatrixKey, TrainingMatrices> training_matrices){
+        try (BufferedReader br = new BufferedReader(new FileReader(model))) {
+            String line;
+            char structure = 'C';
+            char aaMain = 'A';
+            char aaSubwindow = 'A';
+            int pos = 0;
 
+            while ((line = br.readLine()) != null) {
+
+                if(line.startsWith("//") || line.isEmpty()|| line.equals("\t")){
+                    if (line.startsWith(("// Matrix4D"))){
+                        // hier aufhören
+                        break;
+                    }
+                    continue;
+                }
+
+                if (line.startsWith("=")) {
+                    if (line.charAt(7) == '-'){
+                        pos = -Integer.parseInt(String.valueOf(line.charAt(8)));
+                    } else {
+                        pos = Integer.parseInt(String.valueOf(line.charAt(7)));
+                    }
+                    aaMain = line.charAt(3);
+                    aaSubwindow = line.charAt(5);
+                    MatrixKey key = new MatrixKey(aaSubwindow, aaMain, pos + 8);
+                    if (!training_matrices.containsKey(key)){
+                        training_matrices.put(key, new TrainingMatrices());
+                    }
+                    structure = line.charAt(1);
+                    continue;
+                }
+                // Teile enthalten Spalten der Matrix
+                String[] parts = line.trim().split("\t");
+                // Der erste Index der Zeile ist aa
+                char currentAA = line.charAt(0);
+                MatrixKey key = new MatrixKey(aaSubwindow, aaMain, pos + 8);
+                int row = GORHelper.getRowByAa(currentAA);
+
+                for (int i = 0; i < parts.length - 1; i++) { // Erster Eintrag (Aminosäure-Code)
+                    // Die Zeile befüllen
+                    training_matrices.get(key).getMatrix(structure)[row][i] = Integer.parseInt(parts[i + 1]);
+                }
+            }
+
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
     }
-
-    private static double scaleValue(){
-        return 0.0;
-    }
-
 
 
     public static void main(String[] args) {
@@ -157,12 +211,17 @@ public class Predict_Main {
 
                 } else if(method.equals("gor3")){
                     HashMap<MatrixKey, TrainingMatrices> training_matrices = new HashMap<>();
-                    fillMatrices(model, training_matrices);
+                    fillMatricesGOR3(model, training_matrices);
                     Predict_GOR3 predict = new Predict_GOR3(training_matrices, as);
                     as = predict.getProteinData();
 
                 } else if (method.equals("gor4")){
-
+                    HashMap<MatrixKey, TrainingMatrices> trainMatrices4 = new HashMap<>();
+                    HashMap<MatrixKey, TrainingMatrices> matrices4Sum = new HashMap<>();
+                    fillMatricesGOR4(model, trainMatrices4);
+                    fillMatricesGOR3(model, matrices4Sum);
+                    Predict_GOR4 predict = new Predict_GOR4(trainMatrices4, as, matrices4Sum);
+                    as = predict.getProteinData();
                 }
             }
 
@@ -182,8 +241,6 @@ public class Predict_Main {
             } else {
                 //html output
             }
-
-            // output in dieser Klasse
 
         } catch (ParseException e) {
             throw new RuntimeException(e);
