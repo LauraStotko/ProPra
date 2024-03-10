@@ -1,5 +1,6 @@
 package GOR_IV;
 
+import GOR.*;
 import GOR.GORHelper;
 import GOR.MatrixKey;
 import GOR.ProteinData;
@@ -8,7 +9,7 @@ import GOR.TrainingMatrices;
 import java.util.HashMap;
 import java.util.List;
 
-public class Predict_GOR4 {
+public class Predict_GOR4 extends GOR {
 
     private HashMap<MatrixKey, TrainingMatrices> training_matrices;
     private HashMap<MatrixKey, TrainingMatrices> matrices4Sum;
@@ -49,16 +50,24 @@ public class Predict_GOR4 {
 
                 char [] structures = GORHelper.getStructures();
 
-                double probabilityC = (2.0/(2*m+1)) * calcGOR4Matrices(window, structures[0], middleAA) - ((2.0 * m -1)/(2*m +1)) * calcGOR3Matrices(window, structures[0], middleAA);
-                double probabilityE = (2.0/(2*m+1)) * calcGOR4Matrices(window, structures[1], middleAA) - ((2.0 * m -1)/(2*m +1)) * calcGOR3Matrices(window, structures[1], middleAA);
-                double probabilityH = (2.0/(2*m+1)) * calcGOR4Matrices(window, structures[2], middleAA) - ((2.0 * m -1)/(2*m +1)) * calcGOR3Matrices(window, structures[2], middleAA);
+                double valueC = (2.0/(2*m+1)) * calcGOR4Matrices(window, structures[0], middleAA) - ((2.0 * m -1)/(2*m +1)) * calcGOR3Matrices(window, structures[0], middleAA);
+                double valueE = (2.0/(2*m+1)) * calcGOR4Matrices(window, structures[1], middleAA) - ((2.0 * m -1)/(2*m +1)) * calcGOR3Matrices(window, structures[1], middleAA);
+                double valueH = (2.0/(2*m+1)) * calcGOR4Matrices(window, structures[2], middleAA) - ((2.0 * m -1)/(2*m +1)) * calcGOR3Matrices(window, structures[2], middleAA);
+
+                double probC = Math.exp(valueC)/(1 + Math.exp(valueC));
+                double probH = Math.exp(valueH)/(1 + Math.exp(valueH));
+                double probE = Math.exp(valueE)/(1 + Math.exp(valueE));
+
+                p.setProb('C', i, (int) (probC * 10));
+                p.setProb('H', i, (int) (probH * 10));
+                p.setProb('E', i, (int) (probE * 10));
 
 
                 char predictedSS = 'C';
-                if (probabilityH > probabilityE && probabilityH > probabilityC ) {
+                if (valueH > valueE && valueH > valueC ) {
                     predictedSS = 'H';
                 }
-                if (probabilityE > probabilityH && probabilityE > probabilityC) {
+                if (valueE > valueH && valueE > valueC) {
                     predictedSS = 'E';
                 }
                 predictedStructure.append(predictedSS);
@@ -66,13 +75,13 @@ public class Predict_GOR4 {
                 predictedStructure.append('-');
             }
         }
-
-        return predictedStructure.toString();
+        return Postprocessing.postprocessing(predictedStructure.toString());
+        //return predictedStructure.toString();
     }
 
     private double calcGOR4Matrices(String window, char structure, char middleAA){
         double value = 0;
-        // = entfernt
+
         for (int windowPos = 0; windowPos < window.length(); windowPos++) {
 
             char aaSubwindow = window.charAt(windowPos);
@@ -82,7 +91,6 @@ public class Predict_GOR4 {
             }
 
             MatrixKey key = new MatrixKey(aaSubwindow, middleAA, windowPos);
-            // = entfernt
             for(int subwindowPos = windowPos +1; subwindowPos < window.length(); subwindowPos++){
 
                 char currentAA = window.charAt(subwindowPos);
