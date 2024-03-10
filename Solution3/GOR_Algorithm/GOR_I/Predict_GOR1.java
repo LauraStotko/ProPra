@@ -2,15 +2,17 @@ package GOR_I;
 
 
 
+import GOR.GOR;
 import GOR.GORHelper;
 import GOR.TrainingMatrices;
 import GOR.ProteinData;
+import GOR.Postprocessing;
 
 import java.util.HashMap;
 import java.util.List;
 
 
-public class Predict_GOR1 {
+public class Predict_GOR1 extends GOR {
 
     private TrainingMatrices training_matrices;
     final int m = 8;
@@ -62,19 +64,25 @@ public class Predict_GOR1 {
                     continue;
                 }
                 String window = sequence.substring(i - m, i + m);
-                //0 ist H, 1 E, 2 C
 
                 // Berechnung der Wahrscheinlichkeiten
-                double probabilityH = calculateProbability(window, 'H');
-                double probabilityE = calculateProbability(window, 'E');
-                double probabilityC = calculateProbability(window, 'C');
+                double valueH = calculateProbability(window, 'H');
+                double valueE = calculateProbability(window, 'E');
+                double valueC = calculateProbability(window, 'C');
 
+                double probC = Math.exp(valueC)/(1 + Math.exp(valueC));
+                double probH = Math.exp(valueH)/(1 + Math.exp(valueH));
+                double probE = Math.exp(valueE)/(1 + Math.exp(valueE));
+
+                p.setProb('C', i, probC);
+                p.setProb('H', i, probH);
+                p.setProb('E', i, probE);
 
                 char predictedSS = 'C'; // Standard: Coil
-                if (probabilityH > probabilityE && probabilityH > probabilityC ) {
+                if (valueH > valueE && valueH > valueC ) {
                     predictedSS = 'H'; // Helix
                 }
-                if (probabilityE > probabilityH && probabilityE > probabilityC) {
+                if (valueE > valueH && valueE > valueC) {
                     predictedSS = 'E'; // Faltblatt
                 }
                 predictedStructure.append(predictedSS);
@@ -82,8 +90,8 @@ public class Predict_GOR1 {
                 predictedStructure.append('-');
             }
         }
-
-        return predictedStructure.toString();
+        return Postprocessing.postprocessing(predictedStructure.toString());
+        //return predictedStructure.toString();
     }
 
     private double calculateProbability(String window, char structure){
