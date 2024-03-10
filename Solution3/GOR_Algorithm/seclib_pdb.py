@@ -1,17 +1,23 @@
 #!/usr/bin/env python3
+
 import argparse
 import requests
 import os
 
+aa_dict = {
+    "ALA": "A", "ARG": "R", "ASN": "N", "ASP": "D", "CYS": "C", "GLU": "E",
+    "GLN": "Q", "GLY": "G", "HIS": "H", "ILE": "I", "LEU": "L", "LYS": "K",
+    "MET": "M", "PHE": "F", "PRO": "P", "SER": "S", "THR": "T", "TRP": "W",
+    "TYR": "Y", "VAL": "V"
+}
+
 def download_pdb(pdb_id):
     url = f"https://files.rcsb.org/download/{pdb_id}.pdb"
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
+    response = requests.get(url)
+    if response.status_code == 200:
         return response.text
-    except requests.RequestException:
-        print(f"Warning: Failed to download PDB file for ID {pdb_id}. Skipping...")
-        return None
+    else:
+        raise Exception(f"Failed to download PDB file for ID {pdb_id}")
 
 def parse_secondary_structure(pdb_data):
     ss_info = {}
@@ -31,52 +37,61 @@ def parse_secondary_structure(pdb_data):
     return ss_info
 
 def parse_pdb(pdb_data, atom_type, ss_info):
-    aa_dict = {
-        "ALA": "A", "ARG": "R", "ASN": "N", "ASP": "D", "CYS": "C", "GLU": "E",
-        "GLN": "Q", "GLY": "G", "HIS": "H", "ILE": "I", "LEU": "L", "LYS": "K",
-        "MET": "M", "PHE": "F", "PRO": "P", "SER": "S", "THR": "T", "TRP": "W",
-        "TYR": "Y", "VAL": "V"
-    }
     atoms = []
     for line in pdb_data.splitlines():
         if line.startswith('ATOM') and line[12:16].strip() == atom_type:
             chain = line[21]
             pos = int(line[22:26].strip())
-            serial = int(line[6:11].strip())
             aa = aa_dict.get(line[17:20].strip().upper(), 'X')
-            x = float(line[30:38].strip())
-            y = float(line[38:46].strip())
-            z = float(line[46:54].strip())
             ss = ss_info.get((chain, pos), 'C')
-            atoms.append((chain, pos, serial, aa, x, y, z, ss))
+            atoms.append((chain, aa, ss))
     return atoms
 
 def read_ids_from_file(file_path):
     with open(file_path, 'r') as file:
-        return [line.strip().split() for line in file if line.strip()]
+        return [line.strip() for line in file.readlines() if line.strip()]
+
+def write_seclib_file(pdb_id, chains_data, f):
+    for chain_id, chain_data in chains_data.items():
+        if 'AA' in chain_data and 'SS' in chain_data and len(chain_data['AA']) == len(chain_data['SS']):
+            f.write(f">{pdb_id}_{chain_id}\n")
+            f.write("AS " + "".join(chain_data['AA']) + "\n")
+            f.write("SS " + "".join(chain_data['SS']) + "\n")
+
+def extract_sequences_and_structures(atoms, ss_info):
+    chains_data = {}
+    for chain, aa, ss in atoms:
+        if chain not in chains_data:
+            chains_data[chain] = {'AA': [], 'SS': []}
+        chains_data[chain]['AA'].append(aa)
+        chains_data[chain]['SS'].append(ss)
+    return chains_data
 
 def main():
-    parser = argparse.ArgumentParser(description="Download and process PDB files to generate a single seclib file.")
-    parser.add_argument('--id_file', type=str, required=True, help="File containing PDB IDs")
-    parser.add_argument('--output', type=str, required=True, help="Output seclib file")
-    parser.add_argument('--atom_type', type=str, default="CA", help="Atom type for PDB parsing (default: CA)")
+    parser = argparse.ArgumentParser(description="Erzeugt Seclib-Dateien aus PDB- oder DSSP-Daten.")
+    parser.add_argument('--ids', nargs='*', help="Liste von PDB-IDs oder DSSP-Dateinamen", default=[])
+    parser.add_argument('--id_file', type=str, help="Pfad zu einer Textdatei mit PDB-IDs oder DSSP-Dateinamen")
+    parser.add_argument('--output', type=str, required=True, help="Dateipfad für die gesammelte Ausgabe-Seclib-Datei")
+    parser.add_argument('--atom_type', type=str, default="CA", help="Atomtyp für PDB Parsing (Standard: CA)")
+
     args = parser.parse_args()
 
-    pdb_ids = read_ids_from_file(args.id_file)
-    with open(args.output, 'w') as output_file:
-        for pdb_pair in pdb_ids:
-            for pdb_id in pdb_pair:
-                pdb_data = download_pdb(pdb_id)
-                if not pdb_data:
-                    continue  # Überspringt die aktuelle ID, wenn der Download fehlschlägt
+    ids = args.ids if args.ids else read_ids_from_file(args.id_file) if args.id_file else []
 
-                ss_info = parse_secondary_structure(pdb_data)
-                atoms = parse_pdb(pdb_data, args.atom_type, ss_info)
-                for atom in atoms:
-                    chain, pos, serial, aa, x, y, z, ss = atom
-                    output_file.write(f"{pdb_id}_{chain}:{pos} {aa} {ss}\n")
+    if not ids:
+        print("Keine PDB-IDs oder DSSP-Dateinamen angegeben.")
+        return
+
+    with open(args.output, 'w') as f:
+        for pdb_id in ids:
+            pdb_data = download_pdb(pdb_id)
+            ss_info = parse_secondary_structure(pdb_data)
+            atoms = parse_pdb(pdb_data, args.atom_type, ss_info)
+            chains_data = extract_sequences_and_structures(atoms, ss_info)
+            write_seclib_file(pdb_id, chains_data, f)
 
 if __name__ == "__main__":
     main()
+
 
 
