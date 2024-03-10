@@ -1,14 +1,11 @@
 package GOR_III;
 
-import GOR.GORHelper;
-import GOR.MatrixKey;
-import GOR.ProteinData;
-import GOR.TrainingMatrices;
+import GOR.*;
 
 import java.util.HashMap;
 import java.util.List;
 
-public class Predict_GOR3 {
+public class Predict_GOR3 extends GOR {
 
     private HashMap<MatrixKey, TrainingMatrices> training_matrices;
     final int m = 8;
@@ -45,21 +42,29 @@ public class Predict_GOR3 {
                     continue;
                 }
 
-
                 String window = sequence.substring(i - m, i + m);
 
                 char [] structures = GORHelper.getStructures();
 
-                double probabilityC = calculateProbability(window, structures[0], middleAA);
-                double probabilityE = calculateProbability(window, structures[1], middleAA);
-                double probabilityH = calculateProbability(window, structures[2], middleAA);
+                double valueC = calculateProbability(window, structures[0], middleAA);
+                double valueE = calculateProbability(window, structures[1], middleAA);
+                double valueH = calculateProbability(window, structures[2], middleAA);
+
+
+                double probC = Math.exp(valueC)/(1 + Math.exp(valueC));
+                double probH = Math.exp(valueH)/(1 + Math.exp(valueH));
+                double probE = Math.exp(valueE)/(1 + Math.exp(valueE));
+
+                p.setProb('C', i, (int) (probC * 10));
+                p.setProb('H', i, (int) (probH * 10));
+                p.setProb('E', i, (int) (probE * 10));
 
 
                 char predictedSS = 'C';
-                if (probabilityH > probabilityE && probabilityH > probabilityC ) {
+                if (valueH > valueE && valueH > valueC ) {
                     predictedSS = 'H';
                 }
-                if (probabilityE > probabilityH && probabilityE > probabilityC) {
+                if (valueE > valueH && valueE > valueC) {
                     predictedSS = 'E';
                 }
                 predictedStructure.append(predictedSS);
@@ -67,8 +72,8 @@ public class Predict_GOR3 {
                 predictedStructure.append('-');
             }
         }
-
-        return predictedStructure.toString();
+        return Postprocessing.postprocessing(predictedStructure.toString());
+        //return predictedStructure.toString();
 
     }
 
@@ -77,7 +82,7 @@ public class Predict_GOR3 {
         //pos im window ist immer 8 für die middleAA
         double probValue = 0;
         int row = GORHelper.getRowByAa(middleAA);
-        MatrixKey key = new MatrixKey(null, middleAA);
+        MatrixKey key = new MatrixKey(null, middleAA, null);
         TrainingMatrices matrices = this.training_matrices.get(key);
 
         double sumOfInt = matrices.getMatrix(structure)[row][8];
@@ -97,17 +102,14 @@ public class Predict_GOR3 {
 
             char aa = window.charAt(i);
             probValue += log2 + calculateRatio(i, structure, aa, matrices);
-
         }
-
-
         return probValue;
     }
 
     public double calculateRatio(int position, char structure, char aa, TrainingMatrices matrices){
 
         // get row index for this aa
-        // prüfen ob überhaupt existoert
+        // prüfen ob überhaupt existiert
         if (GORHelper.containsAA(aa)) {
             int row = GORHelper.getRowByAa(aa);
 
@@ -123,7 +125,6 @@ public class Predict_GOR3 {
             return 0;
         }
     }
-
     public List<ProteinData> getProteinData() {
         return proteinData;
     }
