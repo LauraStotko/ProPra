@@ -9,12 +9,15 @@ import GOR_I.Predict_GOR1;
 import GOR_I.Train_GOR1;
 import GOR_III.Predict_GOR3;
 import GOR_IV.Predict_GOR4;
+import GOR.Postprocessing;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Predict_GOR5 {
 
@@ -32,8 +35,8 @@ public class Predict_GOR5 {
     private String type;
 
     private List<ProteinData> sequenceAlignments;
-    private List<Integer> gaps;
-    private int countNonGaps;
+    private List<ProteinData> sequencesWithGaps;
+    private PrintWriter writer;
 
 
     public Predict_GOR5(String maf, String method, String model){
@@ -47,8 +50,9 @@ public class Predict_GOR5 {
         this.sequenceAlignments = new ArrayList<>();
         this.currentSeq = "";
         this.currentStructure = "";
-        this.gaps = new ArrayList<>();
-        this.countNonGaps = 0;
+        this.sequencesWithGaps = new ArrayList<>();
+        this.writer = new PrintWriter(System.out);
+
 
         //Matrizen dem GOR entsprechend füllen
         fillMatrices(this.type, model);
@@ -77,15 +81,16 @@ public class Predict_GOR5 {
                 if (file.getName().endsWith(".aln")) {
                     readMAF(file);
                     startPredict();
+                    this.currentStructure = Postprocessing.postprocessing(this.currentStructure);
                     printResults();
                     this.currentID = null;
                     this.currentSeq = "";
                     this.currentStructure = "";
-                    this.gaps = new ArrayList<>();
-                    this.countNonGaps = 0;
+                    this.sequencesWithGaps = new ArrayList<>();
                     // werte wieder zurück setzen
                 }
             }
+            writer.close();
         } else {
             System.out.println("Das angegebene Verzeichnis ist ungültig oder leer.");
         }
@@ -105,13 +110,17 @@ public class Predict_GOR5 {
                 }
                 if (line.startsWith("AS")){
                     this.output.add(new ProteinData(currentID, line.substring(3),null));
-                    this.currentSeq = line;
+                    this.currentSeq = line.substring(3);
                     continue;
                 }
-                // rest beginnt mit Zahlen an und das sind die sequenzen die man bestimmen soll
-                //nicht gaps counten und dann wenn gap kommt abspeichern und anzahl an gaps speichern
+                // rest beginnt mit Zahlen an und das sind die sequenzen die man bestimmen soll, mit regex ab leerzeichen spalten
+                Pattern pattern = Pattern.compile("\\s(.*)"); // alles nach dem Leerezeichen
+                Matcher matcher = pattern.matcher(line);
 
-                removeGaps(line.substring(2));
+                if (matcher.find()) {
+                    // Teil nach dem ersten Leerzeichen
+                    removeGaps(matcher.group(1));
+                }
             }
 
         } catch (IOException e) {
@@ -123,43 +132,31 @@ public class Predict_GOR5 {
     }
 
     private void removeGaps(String line){
-        char[] aas = line.toCharArray();
-        StringBuilder sequenceWithoutGaps = new StringBuilder();
-
-        for (char aa : aas){
-            if (aa == '-'){
-                this.gaps.add(countNonGaps);
-            } else {
-                sequenceWithoutGaps.append(aa);
-                this.countNonGaps++;
-            }
-        }
-        this.sequenceAlignments.add(new ProteinData(null, sequenceWithoutGaps.toString(), null));
+        this.sequencesWithGaps.add(new ProteinData(null,line, null));
+        String seqWithoutGaps = line.replaceAll("-", "");
+        this.sequenceAlignments.add(new ProteinData(null, seqWithoutGaps, null));
     }
 
     private void startPredict(){
         if (this.type.equals("gor1")){
             this.gorPredict = new Predict_GOR1(this.trainingsmatricesGOR1, this.sequenceAlignments);
-            this.sequenceAlignments = this.gorPredict.getProteinData();
         } else if (this.type.equals("gor3")){
             this.gorPredict = new Predict_GOR3(this.trainingsMatrices, this.sequenceAlignments);
-            this.sequenceAlignments = gorPredict.getProteinData();
         } else if (this.type.equals("gor4")){
             this.gorPredict = new Predict_GOR4(this.trainingsMatrices, this.sequenceAlignments, this.matrices4Sum);
-            this.sequenceAlignments = gorPredict.getProteinData();
         }
-        insertGaps();
+        redoGaps();
         predictStructur();
     }
 
     private void predictStructur(){
             StringBuilder ss = new StringBuilder();
-            ss.append("--------");
-            //evtl iwas mit 8
+
             for (int aa = 0; aa < currentSeq.length(); aa++){
-                int valueE = 0;
-                int valueH = 0;
-                int valueC = 0;
+                double valueE = 0;
+                double valueH = 0;
+                double valueC = 0;
+                double count = 0;
 
                 for (int seq = 0; seq < sequenceAlignments.size(); seq++){
 
@@ -168,57 +165,47 @@ public class Predict_GOR5 {
                     if (p.getSequence().charAt(aa) == '-'){
                         continue;
                     }
-                    int probH = p.getProbH();
-                    int probE = p.getProbE();
-                    int probC = p.getProbC();
-                    if (probE > valueE){
-                        valueE += probE;
-                    }
-                    if(probH > valueH){
-                        valueH += probH;
-                    }
-                    if (probC > valueC){
-                        valueC += probC;
-                    }
+                    double probH = p.getProbH();
+                    double probE = p.getProbE();
+                    double probC = p.getProbC();
+                    valueC += probC;
+                    valueH += probH;
+                    valueE += probE;
+                    count++;
 
                 }
+                if (count > 0) {
+                    valueC /= count;
+                    valueH /= count;
+                    valueE /= count;
+                }
+
+                // hier noch die probabilities abspeichern in p
                 if (valueE > valueH && valueE > valueC){
                     ss.append('E');
                 } else if(valueH > valueE && valueH > valueC){
                     ss.append('H');
+                } else if(aa < 8 || aa >= currentSeq.length()-8){
+                    ss.append('-');
                 } else {
                     ss.append('C');
                 }
-
             }
-            ss.append("--------");
             this.currentStructure = ss.toString();
-
     }
 
-    private void insertGaps(){
-        StringBuilder sequenceWithGaps = new StringBuilder();
-        int count = 0;
+    private void redoGaps(){
 
         for (int i = 0; i < this.sequenceAlignments.size(); i++){
-            String seq = this.sequenceAlignments.get(i).getSequence();
-            for (int aa = 0; aa < seq.length();aa++){
-                if (this.gaps.contains(count)){
-                    sequenceWithGaps.append('-');
-                }
-                sequenceWithGaps.append(seq.charAt(aa));
-                count++;
-            }
-            this.sequenceAlignments.get(i).setSequence(sequenceWithGaps.toString());
-            sequenceWithGaps.setLength(0);
+            String seq = this.sequencesWithGaps.get(i).getSequence();
+            this.sequenceAlignments.get(i).setSequence(seq);
         }
     }
 
     private void printResults(){
-        PrintWriter writer = new PrintWriter(System.out);
         writer.println("> "+ this.currentID);
         writer.println("AS " + this.currentSeq);
-        writer.println("SS " + this.currentStructure);
+        writer.println("PS " + this.currentStructure);
     }
 
 
