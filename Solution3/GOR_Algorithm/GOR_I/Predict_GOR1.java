@@ -70,13 +70,19 @@ public class Predict_GOR1 extends GOR {
                 double valueE = calculateProbability(window, 'E');
                 double valueC = calculateProbability(window, 'C');
 
-                double probC = Math.exp(valueC)/(1 + Math.exp(valueC));
-                double probH = Math.exp(valueH)/(1 + Math.exp(valueH));
-                double probE = Math.exp(valueE)/(1 + Math.exp(valueE));
+                double probC = Math.exp(valueC) / (1 + Math.exp(valueC));
+                double probH = Math.exp(valueH) / (1 + Math.exp(valueH));
+                double probE = Math.exp(valueE) / (1 + Math.exp(valueE));
 
-                p.setProb('C', i, probC);
-                p.setProb('H', i, probH);
-                p.setProb('E', i, probE);
+                double sum = probC + probE + probH;
+
+                double normalizedProbC = probC/sum;
+                double normalizedProbE = probE/sum;
+                double normalizedProbH = probH/sum;
+
+                p.setProb('C', i, normalizedProbC);
+                p.setProb('H', i, normalizedProbH);
+                p.setProb('E', i, normalizedProbE);
 
                 char predictedSS = 'C'; // Standard: Coil
                 if (valueH > valueE && valueH > valueC ) {
@@ -91,7 +97,6 @@ public class Predict_GOR1 extends GOR {
             }
         }
         return Postprocessing.postprocessing(predictedStructure.toString());
-        //return predictedStructure.toString();
     }
 
     private double calculateProbability(String window, char structure){
