@@ -55,9 +55,15 @@ public class Predict_GOR3 extends GOR {
                 double probH = Math.exp(valueH)/(1 + Math.exp(valueH));
                 double probE = Math.exp(valueE)/(1 + Math.exp(valueE));
 
-                p.setProb('C', i, (int) (probC * 10));
-                p.setProb('H', i, (int) (probH * 10));
-                p.setProb('E', i, (int) (probE * 10));
+                double sum = probC + probE + probH;
+
+                double normalizedProbC = probC/sum;
+                double normalizedProbE = probE/sum;
+                double normalizedProbH = probH/sum;
+
+                p.setProb('C', i, normalizedProbC);
+                p.setProb('H', i, normalizedProbH);
+                p.setProb('E', i, normalizedProbE);
 
 
                 char predictedSS = 'C';
@@ -73,8 +79,6 @@ public class Predict_GOR3 extends GOR {
             }
         }
         return Postprocessing.postprocessing(predictedStructure.toString());
-        //return predictedStructure.toString();
-
     }
 
     private double calculateProbability(String window, char structure, char middleAA){
@@ -108,8 +112,6 @@ public class Predict_GOR3 extends GOR {
 
     public double calculateRatio(int position, char structure, char aa, TrainingMatrices matrices){
 
-        // get row index for this aa
-        // prüfen ob überhaupt existiert
         if (GORHelper.containsAA(aa)) {
             int row = GORHelper.getRowByAa(aa);
 
