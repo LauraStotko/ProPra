@@ -84,11 +84,17 @@ def main():
 
     with open(args.output, 'w') as f:
         for pdb_id in ids:
-            pdb_data = download_pdb(pdb_id)
-            ss_info = parse_secondary_structure(pdb_data)
-            atoms = parse_pdb(pdb_data, args.atom_type, ss_info)
-            chains_data = extract_sequences_and_structures(atoms, ss_info)
-            write_seclib_file(pdb_id, chains_data, f)
+            try:
+                pdb_data = download_pdb(pdb_id)
+                ss_info = parse_secondary_structure(pdb_data)
+                atoms = parse_pdb(pdb_data, args.atom_type, ss_info)
+                chains_data = extract_sequences_and_structures(atoms, ss_info)
+                write_seclib_file(pdb_id, chains_data, f)
+            except Exception as e:
+                print(f"Ein Fehler ist aufgetreten bei der Verarbeitung von {pdb_id}: {e}. Überspringe...")
+                f.write(f"# Fehler bei der Verarbeitung von {pdb_id}: Übersprungen wegen eines Fehlers\n")
+                continue
+
 
 if __name__ == "__main__":
     main()
