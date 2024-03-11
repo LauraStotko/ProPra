@@ -11,10 +11,6 @@ import java.util.stream.Collectors;
 public class FileWriterUtil {
 
     public static void generateSummaryReport(String summaryFilePath, List<ProteinData> proteinDataList) throws IOException {
-        for (ProteinData protein : proteinDataList) {
-            System.out.println("Sequence Length: " + protein.getSequence().length());
-            System.out.println("Predicted Structure Length: " + protein.getPredictedSecondaryStructure().length());
-        }
 
         int numberOfProteins = proteinDataList.size();
         int sumOfProteinLengths = proteinDataList.stream()
