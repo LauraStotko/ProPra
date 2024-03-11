@@ -3,10 +3,24 @@ import cgi
 import cgitb
 import subprocess
 import tempfile
+import os
 from get_pdb import download_as_fasta
 from acsearch import acsearch
 
 cgitb.enable()
+
+def print_menu():
+    print('''
+    <div id="menu">
+    <ul>
+        <li class="menu-item"><a href='./frontpage_cgi.py'>Start</a></li>
+        <li class="menu-item"><a href='./git_cgi.py'>Git Anleitung</a></li>
+        <li class="menu-item"><a href='./acsearch_cgi.py'>AC Search</a></li>
+        <li class="menu-item"><a href='./workflow_cgi.py'>Genome to ORF</a></li>
+        <li class="menu-item"><a href='./gor_cgi.py'>GOR Algorithmus</a></li>
+    </ul>
+    </div>
+    ''')
 
 print("Content-Type: text/html")
 print()
@@ -23,6 +37,7 @@ print('''<!DOCTYPE html>
             margin: 0;
             padding: 0;
             flex-direction: column; 
+            overflow-y:scroll;
             background-color: #add8e6;
         }
         h1 {
@@ -31,43 +46,43 @@ print('''<!DOCTYPE html>
         #form-container {
             text-align: center;
             padding: 20px;
-            margin-top: 20px; /* Änderung: Kleinere Margin */
-            margin-bottom: 20px; /* Neue Regel: Abstand unterhalb des Formularcontainers */
+            margin-top: 100px; 
+            margin-bottom: 20px;
+            margin-left: 50px;
         }
         input[type="text"] {
-            width: 300px; /* Breite des Eingabefelds */
+            width: 300px; 
             font-size: 18px;
             padding: 5px;
-            margin-top: 10px; /* Abstand nach oben */
+            margin-top: 10px; 
         }
         input[type="submit"] {
             font-size: 18px;
             padding: 10px 20px;
-            margin-top: 10px; /* Abstand nach oben */
+            margin-top: 10px; 
         }
         .example {
             font-size: 16px;
-            color: #666; /* Graue Farbe */
+            color: #666; 
         }
         .menu-item {
             margin-bottom: 10px;
         }
         #output-container {
             margin-top: 20px;
-            margin-left: 250px; /* Anpassung der Margin-Left-Eigenschaft */
-            text-align: center;
-            overflow-y: auto; /* Vertikales Scrollen ermöglichen */
-            max-height: 400px; /* Maximale Höhe des Ausgabecontainers */
-            width: 80%; /* Änderung: volle Breite des Containers */
+            margin-left: 50px;
+            position: absolute;
+            left: 50px;
+            text-align: left;
+            overflow-y: auto;
+            width: 25cm;
+            height: 30cm;
+            border: 1px solid #ccc;
+            padding: 10px;
+            background-color: #f9f9f9;
         }
         pre {
-            white-space: pre-line; /* Umbruch von langen Zeilen */
-            padding: 10px;
-            border: 1px solid #ccc; /* Rahmen um den Output */
-            background-color: #f9f9f9; /* Hintergrundfarbe des Output-Containers */
-            max-width: 80%; /* Maximalbreite des Output-Containers */
-            overflow-x: hidden; 
-            margin: 0 auto; /* Zentrieren des Containers */
+            white-space: pre-line; 
         }
         #menu {
             position: fixed;
@@ -92,16 +107,11 @@ print('''<!DOCTYPE html>
     </style>
 </head>
 <body>
-<div id="menu">
-    <ul>
-        <li class="menu-item"><a href='./frontpage_cgi.py'>Start</a></li>
-        <li class="menu-item"><a href='./git_cgi.py'>Git Anleitung</a></li>
-        <li class="menu-item"><a href='./acsearch_cgi.py'>AC Search</a></li>
-        <li class="menu-item"><a href='./workflow_cgi.py'>Genome to ORF</a></li>
-        <li class="menu-item"><a href='./gor_cgi.py'>GOR Algorithmus</a></li>
-    </ul>
-</div>
+''')
 
+print_menu()
+
+print('''
 <div id="form-container">
     <h1>GOR Algorithmus</h1>
 ''')
@@ -165,6 +175,7 @@ input_data = form.getvalue("input_data")
 with_probabilities = form.getvalue("with_probabilities") is not None
 
 if gor_type and input_type and input_data:
+
     model_file = None
     if gor_type == "GOR1":
         model_file = "./Data/gor1_cb513_model.txt"
@@ -174,37 +185,47 @@ if gor_type and input_type and input_data:
         model_file = "./Data/gor4_cb513_model.txt"
 
     if input_type == "Sequenz":
-        input_file = "temp_sequence.txt"
         with tempfile.NamedTemporaryFile(mode="w", delete=False) as fasta_temp:
             fasta_temp.write(input_data)
 
     elif input_type == "Fasta File":
-        input_file = input_data
-        with tempfile.NamedTemporaryFile(delete=False) as fasta_temp:
-            fasta_temp.write(input_file.file.read())
+        input_data = form["input_data"]
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as fasta_temp:
+            fasta_temp.write(input_data.file.read().decode("utf-8"))
 
     elif input_type == "AC number":
-        input_file = acsearch(input_data)
+        input_file = acsearch(form["input_data"])
         with tempfile.NamedTemporaryFile(delete=False) as fasta_temp:
-            fasta_temp.write(input_file.file.read())
-    elif input_type == "PDB ID":
-        input_file = download_as_fasta(input_data)
-        with tempfile.NamedTemporaryFile(delete=False) as fasta_temp:
-            fasta_temp.write(input_file.file.read())
+            fasta_temp.write(input_data.file.read().decode("utf-8"))
 
-    command = ["java", "./predict.jar", "--model", model_file, "--format html", "--seq", fasta_temp.name]
+    elif input_type == "PDB ID":
+        input_file = download_as_fasta(form["input_data"])
+        with tempfile.NamedTemporaryFile(delete=False) as fasta_temp:
+            fasta_temp.write(input_data.file.read().decode("utf-8"))
+
+    command = ["java", "-jar", "predict.jar", "--model", model_file, "--format", "html", "--seq", fasta_temp.name]
 
     if with_probabilities:
         command.append("--probabilities")
 
-    result = subprocess.run(command, capture_output=True, text=True)
+    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
-    print("<div style='margin-left: 300px;'>")
-    print("<h1>GOR Ergebnis</h1>")
-    print("<pre>")
-    print(result.stdout)
-    print("</pre>")
-    print("</div>")
+    if result.returncode == 0:
+        html_file_path = "./output.html"
+        # Dateiberechtigungen auf 755 setzen
+        os.chmod(html_file_path, 0o755)
+        with open(html_file_path, "r") as html_file:
+            html_content = html_file.read()
+
+        print("<div style='margin-left: 300px;' id=output-container>")
+        print("<div id='result'>")
+        print(html_content)
+        print("</div>")
+        print(f'<form action="{html_file_path}" method="get" download="output.html"><button type="submit">Download Output</button></form>')
+        print('</div>')
+    else:
+        print("<p>Ein Fehler ist aufgetreten. Bitte checken Sie Ihre Eingabe.</p>")
+
 #else:
     #print_gor_form()
 
