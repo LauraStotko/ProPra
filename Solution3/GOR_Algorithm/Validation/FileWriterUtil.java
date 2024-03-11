@@ -1,8 +1,11 @@
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class FileWriterUtil {
@@ -121,7 +124,7 @@ public class FileWriterUtil {
     }
 
     private static void writeStatistics(BufferedWriter writer, String label, Map<String, Double> stats) throws IOException {
-        writer.write(String.format("%s - Mean: %.2f, Median: %.2f, Std Dev: %.2f, Min: %.2f, Max: %.2f, Quantil_5: %.2f, Quantil_25: %.2f, Quantil_75: %.2f, Quantil_95: %.2f\n",
+        writer.write(String.format(Locale.US,"%s\t-\tMean:\t%.2f\tMedian:\t%.2f\tStd Dev:\t%.2f\tMin:\t%.2f\tMax:\t%.2f\tQuantil_5:\t%.2f\tQuantil_25:\t%.2f\tQuantil_75:\t%.2f\tQuantil_95:\t%.2f\n",
                 label,
                 stats.get("Mean"),
                 stats.get("Median"),
@@ -133,6 +136,7 @@ public class FileWriterUtil {
                 stats.get("Quantil_75"),
                 stats.get("Quantil_95")));
     }
+
 
 
     private static double calculateMedian(List<Double> scores) {
@@ -159,8 +163,8 @@ public class FileWriterUtil {
     public static void generateDetailedReport(String detailedFilePath, List<ProteinData> proteinDataList) throws IOException {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(detailedFilePath))) {
             for (ProteinData protein : proteinDataList) {
-                double q3Score = calculateTotalQ3Score(protein); 
-                double sovScore = calculateTotalSOVScore(protein); 
+                double q3Score = calculateTotalQ3Score(protein);
+                double sovScore = calculateTotalSOVScore(protein);
 
                 Map<Character, Double> q3Scores = protein.getQ3Scores();
                 Map<Character, Double> sovScores = protein.getSOVScores();
@@ -207,7 +211,6 @@ public class FileWriterUtil {
 
         return actualStructure.length() > 0 ? (double) correctPredictions / actualStructure.length() * 100.0 : 0.0;
     }
-
 
 }
 
