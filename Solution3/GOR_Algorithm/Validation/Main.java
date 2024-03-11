@@ -90,14 +90,6 @@ public class Main {
         double max = scores.stream().mapToDouble(Double::doubleValue).max().orElse(Double.NaN);
         double median = calculateMedian(scores);
         double stdDev = calculateStandardDeviation(scores, mean);
-
-        System.out.println("Statistiken für SOV-Score (Typ " + type + "):");
-        System.out.println("Durchschnitt: " + mean);
-        System.out.println("Min: " + min);
-        System.out.println("Max: " + max);
-        System.out.println("Median: " + median);
-        System.out.println("Standardabweichung: " + stdDev);
-        System.out.println();
     }
 
     private static double calculateMedian(List<Double> scores) {
@@ -141,3 +133,5 @@ public class Main {
         }
     }
 }
+
+
