@@ -58,10 +58,15 @@ public class Predict_GOR4 extends GOR {
                 double probH = Math.exp(valueH)/(1 + Math.exp(valueH));
                 double probE = Math.exp(valueE)/(1 + Math.exp(valueE));
 
-                p.setProb('C', i, (int) (probC * 10));
-                p.setProb('H', i, (int) (probH * 10));
-                p.setProb('E', i, (int) (probE * 10));
+                double sum = probC + probE + probH;
 
+                double normalizedProbC = probC/sum;
+                double normalizedProbE = probE/sum;
+                double normalizedProbH = probH/sum;
+
+                p.setProb('C', i, normalizedProbC);
+                p.setProb('H', i, normalizedProbH);
+                p.setProb('E', i, normalizedProbE);
 
                 char predictedSS = 'C';
                 if (valueH > valueE && valueH > valueC ) {
@@ -76,7 +81,7 @@ public class Predict_GOR4 extends GOR {
             }
         }
         return Postprocessing.postprocessing(predictedStructure.toString());
-        //return predictedStructure.toString();
+
     }
 
     private double calcGOR4Matrices(String window, char structure, char middleAA){
@@ -128,7 +133,7 @@ public class Predict_GOR4 extends GOR {
 
                 double numerator = (structure == 'E' ? valueE : (structure == 'H' ? valueH : valueC));
                 double denominator = (structure == 'E' ? (valueC + valueH) : (structure == 'H' ? (valueC + valueE) : (valueE + valueH)));
-                //evtl vertauschen
+
                 value += Math.log((numerator + 0.1) / (denominator+0.1));
             }
 
