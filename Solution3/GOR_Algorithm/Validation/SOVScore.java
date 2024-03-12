@@ -1,5 +1,4 @@
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class SOVScore {
 
@@ -10,7 +9,7 @@ public class SOVScore {
      * @param sequence The secondary structure sequence (actual or predicted).
      * @return A list of Segment objects representing the identified segments.
      */
-    private static List<Segment> identifySegments(String sequence) {
+    public static List<Segment> identifySegments(String sequence, char type) {
         List<Segment> segments = new ArrayList<>();
         if (sequence.isEmpty()) {
             return segments;
@@ -20,7 +19,9 @@ public class SOVScore {
         int start = 0;
         for (int i = 1; i <= sequence.length(); i++) {
             if (i == sequence.length() || sequence.charAt(i) != currentType) {
-                segments.add(new Segment(currentType, start, i - 1));
+                if (currentType == type) {
+                    segments.add(new Segment(currentType, start, i - 1));
+                }
                 if (i < sequence.length()) {
                     currentType = sequence.charAt(i);
                     start = i;
@@ -56,13 +57,6 @@ public class SOVScore {
      * @return The maximum overlap length, considering potential adjustments.
      */
     public static int maxov (Segment s1, Segment s2){
-        if (minov(s1, s2) == 0) {
-            return 0; // No initial overlap, might need to adjust based on your SOV requirements
-        }
-
-        // The maximum overlap is the length of the shorter segment
-        //return Math.min(s1.length(), s2.length());
-
         int overlapStart = Math.min(s1.getStart(), s2.getStart());
         int overlapEnd = Math.max(s1.getEnd(), s2.getEnd());
 
@@ -94,6 +88,9 @@ public class SOVScore {
     }
 
     // Step 3: SOV Score Calculation
+    public static double calculateSOVScore(String actualStructure, String predictedStructure, char structureType) {
+        return calculateSOVScore(actualStructure, predictedStructure, structureType, false)[0];
+    }
     /**
      * Calculates the SOV score for a given secondary structure type.
      *
@@ -102,43 +99,49 @@ public class SOVScore {
      * @param structureType The type of secondary structure to calculate the SOV score for ('H', 'E', or 'C').
      * @return The SOV score for the specified secondary structure type.
      */
-    public static double calculateSOVScore(String actualStructure, String predictedStructure, char structureType) {
-        String oldA = actualStructure;
-        String oldP = predictedStructure;
-        actualStructure = actualStructure.substring(8,actualStructure.length()-8);
-        predictedStructure = predictedStructure.substring(8,predictedStructure.length()-8);
-        List<Segment> actualSegments = identifySegments(actualStructure);
-        List<Segment> predictedSegments = identifySegments(predictedStructure);
+    public static double[] calculateSOVScore(String actualStructure, String predictedStructure, char structureType,
+                                           boolean shortVersion) {
+        int i = 0;
 
-        actualSegments = filterSegmentsByType(actualSegments, structureType);
-        predictedSegments = filterSegmentsByType(predictedSegments, structureType);
+        while (i< predictedStructure.length() && predictedStructure.charAt(i)=='-'){
+            i++;
+        }
+        if(i==predictedStructure.length())
+        {
+            return new double[]{-1};
+        }
+        actualStructure=actualStructure.substring(i, actualStructure.length()-i);
+        predictedStructure=predictedStructure.substring(i, predictedStructure.length()-i);
+        List<Segment> actualSegments = identifySegments(actualStructure, structureType);
+        List<Segment> predictedSegments = identifySegments(predictedStructure, structureType);
 
         double scoreSum = 0;
         int totalLen = 0;
         for (Segment actual : actualSegments) {
             boolean empty_bucket = true;
             for (Segment predicted : predictedSegments) {
-                int overlap = actual.calculateOverlap(predicted);
+                int overlap = minov(actual, predicted);
                 if (overlap > 0) {
-                    int maxOverlap = Math.min(actual.length(), predicted.length());
-                    int delta = delta(actual,predicted);
-                    scoreSum += ((double) overlap + delta) / maxOverlap * actual.length();
+                    int maxOverlap = maxov(actual,predicted);//Math.min(actual.length(), predicted.length());
+                    int delta = delta(actual, predicted);
+                    scoreSum += actual.length() * ((double) overlap + delta) / maxOverlap;
                     totalLen += actual.length();
                     empty_bucket = false;
                 }
             }
-            if (empty_bucket){
+            if (empty_bucket) {
                 totalLen += actual.length();
             }
         }
 
-        double result = totalLen > 0 ? (scoreSum / totalLen) * 100.0 : 0.0;
-        return result;
+        if (totalLen <= 0){
+            return new double[]{-1, totalLen};
+        }
+
+        if (shortVersion) {
+            return new double[]{scoreSum, totalLen};
+        } else {
+            return new double[]{(scoreSum / totalLen) * 100.0};
+        }
     }
-
-
-    private static List<Segment> filterSegmentsByType(List<Segment> segments, char type) {
-        return segments.stream().filter(segment -> segment.getType() == type).collect(Collectors.toList());
-    }
-
 }
