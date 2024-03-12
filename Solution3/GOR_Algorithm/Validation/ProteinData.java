@@ -73,6 +73,7 @@ public class ProteinData {
 
     // Methode zur Berechnung der SOV-Scores für alle Strukturtypen
     public void calculateAndSetSOVScores(String actualStructure, String predictedStructure) {
+        //SOVScore.calculateSOVScore("CCCCCCCCCCCCCHHHHHHHHHHHHHHHHHHCCCCC", "--------CCCCCHHHHHHHHHHHHHHH--------", 'C');
         this.sovScoreH = SOVScore.calculateSOVScore(actualStructure, predictedStructure, 'H');
         this.sovScoreE = SOVScore.calculateSOVScore(actualStructure, predictedStructure, 'E');
         this.sovScoreC = SOVScore.calculateSOVScore(actualStructure, predictedStructure, 'C');
@@ -97,3 +98,4 @@ public class ProteinData {
         return sovScoreC;
     }
 }
+
