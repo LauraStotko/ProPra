@@ -4,7 +4,6 @@ import argparse
 import math
 import requests
 import numpy as np
-import matplotlib.pyplot as plt
 
 
 def download_pdb(pdb_id):
@@ -24,7 +23,7 @@ aa_dict = {
 }
 
 def parse_secondary_structure(pdb_data):
-    ss_info = {}
+    ss_info = {} #
     for line in pdb_data.splitlines():
         if line.startswith('HELIX'):
             chain = line[19]  # Extrahiere die Kette für die Helix

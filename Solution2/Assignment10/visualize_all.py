@@ -4,9 +4,28 @@ import argparse
 import os
 import urllib.request
 import math
-from get_pdb import download_pdb
-from visualize_mol import visualize_mol
+# from get_pdb import download_pdb
+# from visualize_mol import visualize_mol
 
+def download_pdb(id):
+    url = f"https://files.rcsb.org/view/{id}.pdb"
+    try:
+        pdb = urllib.request.urlopen(url)
+        if pdb.getcode() == 200:
+            return pdb.read().decode('utf-8')
+    except urllib.request.HTTPError as e:
+        print(f"Sorry, this PDB ID {id} does not exist")
+        return None
+
+def download_as_fasta(id):
+    url = f"https://www.rcsb.org/fasta/entry/{id}/display"
+    try:
+        fasta = urllib.request.urlopen(url)
+        if fasta.getcode() == 200:
+            return fasta.read().decode('utf-8')
+    except urllib.request.HTTPError as e:
+        print(f"Sorry, this PDB ID {id} does not exist")
+        return None
 
 def parse_secondary_structure(pdb_data):
     ss_info = {}
@@ -75,6 +94,21 @@ def extract_ca_coordinates(pdb_data):
         return first_ca, last_ca
     return None, None
 
+def calculate_volume(box_size):
+    # Berechnet das Volumen der Box
+    return box_size[0] * box_size[1] * box_size[2]
+
+def extract_cb_coordinates(pdb_data):
+    # Extrahiert Cβ-Koordinaten, außer für Glycin (Glycin hat kein Cβ)
+    cb_coords = {}
+    for line in pdb_data.splitlines():
+        if line.startswith("ATOM") and line[13:15] == "CB":
+            residue_id = line[22:26].strip()
+            x = float(line[30:38].strip())
+            y = float(line[38:46].strip())
+            z = float(line[46:54].strip())
+            cb_coords[residue_id] = (x, y, z)
+    return cb_coords
 
 """
 def main():
@@ -131,6 +165,7 @@ def main():
     parser = argparse.ArgumentParser(description="Download PDB files and analyze structures.")
     parser.add_argument("--id", nargs="+", required=True, help="List of PDB IDs to process.")
     parser.add_argument("--output", default=".", help="Directory to save PDB files and analysis.")
+    parser.add_argument("--fasta", action='store_true', help="Download and save as FASTA format.")
     args = parser.parse_args()
 
     output_dir = args.output
@@ -142,14 +177,39 @@ def main():
         if pdb_data is None:
             continue
 
-        pdb_file_path = f'{output_dir}/{pdb_id}.pdb'
-        with open(pdb_file_path, 'w') as pdb_file:
-            pdb_file.write(pdb_data)
+        analysis_file_path = f'{output_dir}/{pdb_id}_analysis.txt'
+        with open(analysis_file_path, 'w') as analysis_file:
 
-        # Here, you would perform any structural analysis you need on pdb_data
+            if args.fasta:
+                fasta_data = download_as_fasta(pdb_id)
+                if fasta_data:
+                    fasta_file_path = f'{output_dir}/{pdb_id}.fasta'
+                    with open(fasta_file_path, 'w') as fasta_file:
+                        fasta_file.write(fasta_data)
+                    analysis_file.write(f"FASTA data saved for {pdb_id}\n")
+                else:
+                    analysis_file.write(f"Failed to download FASTA data for {pdb_id}\n")
 
-        # After analysis, visualize the molecule
-        visualize_mol(pdb_id, colourized=True, html=True, output_path=output_dir)
+            ss_info = parse_secondary_structure(pdb_data)
+            proportion = calculate_secondary_structure_proportion(ss_info, pdb_data)
+            analysis_file.write(f"Proportion of amino acids in secondary structures for {pdb_id}: {proportion:.4f}\n")
+
+            cb_coords = extract_cb_coordinates(pdb_data)
+            analysis_file.write(f"Number of Cβ atoms found: {len(cb_coords)}\n")
+
+            first_ca, last_ca = extract_ca_coordinates(pdb_data)
+            if first_ca and last_ca:
+                distance = calculate_distance(first_ca, last_ca)
+                analysis_file.write(f"Distance between the Cα atoms of the first and last amino acid in {pdb_id}: {distance:.4f} Å\n")
+
+            extreme_coords = parse_pdb_for_extreme_coordinates(pdb_data)
+            if extreme_coords:
+                box_size = calculate_box_size(*extreme_coords)
+                volume = calculate_volume(box_size)
+                analysis_file.write(f"Box dimensions for {pdb_id}: X={box_size[0]:.4f} Å, Y={box_size[1]:.4f} Å, Z={box_size[2]:.4f} Å\n")
+                analysis_file.write(f"Volume of the smallest axis-aligned box for {pdb_id}: {volume:.4f} Å³\n")
+            else:
+                analysis_file.write(f"No atom coordinates found in {pdb_id}.\n")
 
 if __name__ == "__main__":
     main()

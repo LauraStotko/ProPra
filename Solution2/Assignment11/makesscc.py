@@ -46,13 +46,13 @@ def parse_pdb(pdb_data, atom_type, ss_info): # ss_info ist das Dictionary aus pa
     for line in pdb_data.splitlines(): # splitlines() teilt die Zeichenkette in Zeilen auf
         if line.strip() == '' or line.startswith('REMARK'): # strip() entfernt Leerzeichen am Anfang und Ende der Zeichenkette
             continue
-        if line.startswith('MODEL') and not model_started:
+        elif line.startswith('MODEL') and not model_started:
             model_started = True # parsing der Atome beginnt
             continue
-        if line.startswith('ENDMDL'): # Wenn das Ende des Modells erreicht ist,
+        elif line.startswith('ENDMDL'): # Wenn das Ende des Modells erreicht ist,
             break
         # extrahiert wichtige Informationen aus der Zeile
-        if line.startswith('ATOM') and line[12:16].strip() == atom_type: # 12:16 Position für Atommtyp
+        elif line.startswith('ATOM') and line[12:16].strip() == atom_type: # 12:16 Position für Atommtyp
             chain = line[21] # Extrahiere die Kette des Atoms
             pos = int(line[22:26].strip()) # Positionsnummer der Aminosäure innerhalb des Atoms zum zuordnen
             serial = int(line[6:11].strip()) # eindeutige Seriennummer des Atoms
