@@ -2,7 +2,6 @@
 
 import argparse
 import requests
-import os
 
 aa_dict = {
     "ALA": "A", "ARG": "R", "ASN": "N", "ASP": "D", "CYS": "C", "GLU": "E",
@@ -47,9 +46,26 @@ def parse_pdb(pdb_data, atom_type, ss_info):
             atoms.append((chain, aa, ss))
     return atoms
 
+
 def read_ids_from_file(file_path):
+    import re
+
+    # RegEx für eine typische PDB-ID, angepasst nach Bedarf
+    # Dieses Beispiel nimmt an, dass eine PDB-ID aus 4 alphanumerischen Zeichen besteht
+    pdb_id_pattern = re.compile(r'\b[a-zA-Z0-9]{4}\b')
+
+    pdb_ids = set()  # Verwendung eines Sets zur Vermeidung von Duplikaten
+
     with open(file_path, 'r') as file:
-        return [line.strip() for line in file.readlines() if line.strip()]
+        for line in file:
+            # Findet alle PDB-IDs in der Zeile gemäß dem definierten Muster
+            found_ids = pdb_id_pattern.findall(line)
+            # Fügt gefundene IDs dem Set hinzu, Duplikate werden automatisch entfernt
+            pdb_ids.update(found_ids)
+
+    return list(pdb_ids)  # Konvertiert das Set zurück in eine Liste für die Ausgabe
+
+
 
 def write_seclib_file(pdb_id, chains_data, f):
     for chain_id, chain_data in chains_data.items():
@@ -57,6 +73,7 @@ def write_seclib_file(pdb_id, chains_data, f):
             f.write(f">{pdb_id}_{chain_id}\n")
             f.write("AS " + "".join(chain_data['AA']) + "\n")
             f.write("SS " + "".join(chain_data['SS']) + "\n")
+
 
 def extract_sequences_and_structures(atoms, ss_info):
     chains_data = {}
@@ -66,6 +83,7 @@ def extract_sequences_and_structures(atoms, ss_info):
         chains_data[chain]['AA'].append(aa)
         chains_data[chain]['SS'].append(ss)
     return chains_data
+
 
 def main():
     parser = argparse.ArgumentParser(description="Erzeugt Seclib-Dateien aus PDB- oder DSSP-Daten.")
