@@ -6,6 +6,7 @@ import os
 import tempfile
 import subprocess
 import html
+import re
 
 cgitb.enable()  # Für Debugging-Zwecke
 
@@ -13,38 +14,48 @@ print("Content-Type: text/html;charset=utf-8")
 print()
 
 
+import cgi
+import cgitb
+import os
+import tempfile
+import subprocess
+import html
+import re
+
+cgitb.enable()  # Für Debugging-Zwecke
+
+print("Content-Type: text/html;charset=utf-8")
+print()
+
 def handle_form():
     form = cgi.FieldStorage()
     if 'submit' in form:  # Prüft, ob das Formular gesendet wurde
-        # Überprüfen, ob eine Datei hochgeladen wurde
         if 'file' in form and form['file'].filename:
             fileitem = form['file']
-            # Erstellen einer temporären Datei zum Speichern der hochgeladenen PDB-IDs
             with tempfile.NamedTemporaryFile(delete=False) as temp:
                 temp.write(fileitem.file.read())
                 temp_file_path = temp.name
-            pdb_ids = ''  # Setzen von pdb_ids auf einen leeren String, wenn eine Datei hochgeladen wird
+            pdb_ids = ''
         else:
             pdb_ids = form.getvalue('pdb_ids', '')
 
+        # Normalisierung der PDB-IDs, um verschiedene Trennzeichen zu berücksichtigen
+        pdb_ids_normalized = re.sub(r'[\s,]+', ' ', pdb_ids).strip()
+
         atom_type = form.getvalue('atom_type', 'CA')
 
-        # Pfad zum Python-Skript, das die eigentliche Logik enthält
         script_path = './seclib_pdb.py'
 
-        # Erstellen einer temporären Datei für die Ausgabe
-        output_file = tempfile.NamedTemporaryFile(delete=False, mode='w+', suffix='.txt')
+        # Erstellen einer temporären Datei für die Ausgabe mit der .fasta Endung
+        output_file = tempfile.NamedTemporaryFile(delete=False, mode='w+', suffix='.fasta')
         output_file_path = output_file.name
         output_file.close()
 
-        # Kommandozeilenbefehl vorbereiten
-        if pdb_ids:  # Wenn PDB-IDs direkt eingegeben wurden
-            command = [script_path, "--ids"] + pdb_ids.split() + ["--output", output_file_path, "--atom_type",
-                                                                  atom_type]
+        if pdb_ids_normalized:  # Wenn PDB-IDs direkt eingegeben wurden
+            command = [script_path, "--ids"] + pdb_ids_normalized.split() + ["--output", output_file_path, "--atom_type", atom_type]
         else:  # Wenn eine Datei hochgeladen wurde
             command = [script_path, "--id_file", temp_file_path, "--output", output_file_path, "--atom_type", atom_type]
 
-        # Ausführen des Python-Skripts und Erfassen der Ausgabe
         try:
             subprocess.run(command, check=True)
             print(f"<h2>Ergebnisse:</h2>")
@@ -52,17 +63,15 @@ def handle_form():
             with open(output_file_path, 'r') as f:
                 print(html.escape(f.read()))
             print("</textarea>")
-            print(f"<br><a href='{output_file_path}' download>Klicke hier, um die Datei herunterzuladen</a>")
+            print(f"<br><a href='{output_file_path}' download='seclib_output.fasta'>Klicke hier, um die .fasta Datei herunterzuladen</a>")
         except Exception as e:
             print(f"<h2>Ausnahmefehler:</h2>")
             print(f"<pre>{html.escape(str(e))}</pre>")
 
-        # Bereinigung der temporären Dateien, wenn eine Datei hochgeladen wurde
         if 'temp_file_path' in locals():
             os.unlink(temp_file_path)
     else:
         display_form()
-
 
 def display_form():
     print("""<html><head><title>PDB ID Verarbeitung</title></head><body>
