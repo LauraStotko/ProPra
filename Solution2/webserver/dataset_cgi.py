@@ -42,7 +42,8 @@ def handle_form():
         # Normalisierung der PDB-IDs, um verschiedene Trennzeichen zu berücksichtigen
         pdb_ids_normalized = re.sub(r'[\s,]+', ' ', pdb_ids).strip()
 
-        atom_type = form.getvalue('atom_type', 'CA')
+        # Fester Wert für den Atomtyp, da er nicht mehr vom Benutzer ausgewählt wird
+        atom_type = "CA"
 
         script_path = './seclib_pdb.py'
 
@@ -81,10 +82,10 @@ def display_form():
                 <textarea name="pdb_ids" rows="5" cols="30"></textarea></p>
                 <p>ODER lade eine Textdatei mit PDB-IDs hoch:<br>
                 <input type="file" name="file" /></p>
-                <p>Atomtyp: <input type="text" name="atom_type" value="CA"></p>
                 <input type="submit" name="submit" value="Submit" />
             </form>
         </body></html>""")
+
 
 
 if __name__ == "__main__":
