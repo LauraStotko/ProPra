@@ -283,13 +283,12 @@ def fetch_family_name_and_chain(user_input, connection):
         cursor = connection.cursor()
         chain_query = "SELECT MIN(chain) FROM Alignments WHERE pdb_id = %s"
         cursor.execute(chain_query, (pdb_id,))
-        chain_result = cursor.fetchone()
-        if chain_result and chain_result[0]:
-            chain = chain_result[0]  # Use the first available chain
-        else:
-            # Handle case where no chain is found (might not be necessary depending on your data)
-            chain = ''
+        chain_result = cursor.fetchall()  # Using fetchall to ensure all results are consumed
         cursor.close()
+        if chain_result and chain_result[0][0]:
+            chain = chain_result[0][0]  # Use the first available chain
+        else:
+            chain = ''  # Handle case where no chain is found
 
     # Now proceed with the original query to fetch family name using the PDB ID with the first available chain
     cursor = connection.cursor()
@@ -299,12 +298,13 @@ def fetch_family_name_and_chain(user_input, connection):
     WHERE a.pdb_id = %s AND (a.chain = %s OR %s = '')
     """
     cursor.execute(family_query, (pdb_id, chain, chain))
-    result = cursor.fetchone()
+    result = cursor.fetchall()  # Using fetchall to ensure all results are consumed
     cursor.close()
 
     pdb_id_with_chain = f"{pdb_id}{chain}" if chain else pdb_id  # Ensure the ID and chain are correctly concatenated
-    return (result[0], pdb_id_with_chain) if result else (None, pdb_id)
-    
+    return (result[0][0], pdb_id_with_chain) if result else (None, pdb_id)
+
+
 # Corrected function to run the alignment jar
 def run_jar(algorithm, alignment_type, pdb_id1, pdb_id2, gap_extension_penalty, gap_penalty, sub_matrix, matrix_path, include_secondary_structure=False):
     command = [
@@ -431,4 +431,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
